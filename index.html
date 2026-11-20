@@ -1,6 +1,18 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
+<script>/*DEMO-SHIM*/(function(){var P='demo-'+'Customer-issue'+'::';
+function wrap(real){function keys(){var o=[];for(var i=0;i<real.length;i++){var k=real.key(i);if(k&&k.indexOf(P)===0)o.push(k.slice(P.length))}return o}
+var api={getItem:function(k){return real.getItem(P+k)},setItem:function(k,v){real.setItem(P+k,String(v))},removeItem:function(k){real.removeItem(P+k)},clear:function(){keys().forEach(function(k){real.removeItem(P+k)})},key:function(i){var a=keys();return i<a.length?a[i]:null}};
+return new Proxy({},{get:function(t,n){if(n in api)return api[n];if(n==='length')return keys().length;if(typeof n!=='string')return undefined;var v=real.getItem(P+n);return v===null?undefined:v},
+set:function(t,n,v){real.setItem(P+n,String(v));return true},deleteProperty:function(t,n){real.removeItem(P+n);return true},
+ownKeys:function(){return keys()},getOwnPropertyDescriptor:function(t,n){var v=real.getItem(P+n);return v===null?undefined:{value:v,enumerable:true,configurable:true,writable:true}},
+has:function(t,n){return (n in api)||n==='length'||real.getItem(P+n)!==null}})}
+try{var L=window.localStorage,S=window.sessionStorage;Object.defineProperty(window,'localStorage',{value:wrap(L),configurable:true});Object.defineProperty(window,'sessionStorage',{value:wrap(S),configurable:true})}catch(e){}
+try{var I=window.indexedDB,o=I.open.bind(I),d=I.deleteDatabase.bind(I);I.open=function(n,v){return v===undefined?o(P+n):o(P+n,v)};I.deleteDatabase=function(n){return d(P+n)}}catch(e){}
+})();
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>客戶問題點管理系統</title>
