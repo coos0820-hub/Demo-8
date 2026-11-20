@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>客戶問題點管理系統</title>
+<style>
+:root{--bg:#eef1f5;--card:#fff;--ink:#1d2733;--sub:#5f6b7a;--line:#d9dee6;--hd:#1f2d3d;--hd2:#2b3d52;--acc:#1f6feb;--accS:#e7f0ff;--A:#d93a3a;--B:#e08a12;--C:#5b7a99;--ok:#1f9d55;--bad:#d93a3a;--warn:#e08a12}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+header{background:var(--hd);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;letter-spacing:.5px}
+header .ver{font-size:12px;opacity:.75;background:#34475e;border-radius:4px;padding:1px 6px}
+.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.stabs button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 14px;font:inherit;cursor:pointer}.stabs button.on{background:var(--hd2);color:#fff;border-color:var(--hd2)}
+.lockbox{background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px}
+.ptbl select{font:inherit;padding:2px 4px}.ptbl td,.ptbl th{white-space:nowrap}
+#whoOv{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:900}#whoOv.on{display:flex}
+#whoOv .wbox{background:#fff;border-radius:12px;padding:18px 20px;width:min(560px,94vw);max-height:90vh;overflow:auto}
+#whoOv .wrow{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
+textarea:disabled,input:disabled,select:disabled{background:#eceeea!important;color:#55574f!important}
+.filebar{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.fstat{font-size:12px;opacity:.9;margin-right:4px}
+.fstat.warn{color:#ffcf7a}
+nav{background:var(--hd2);display:flex;gap:2px;padding:0 12px;overflow-x:auto}
+nav button{background:none;border:0;color:#c9d4e2;padding:10px 16px;font:inherit;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:#fff;border-bottom-color:#4da3ff;font-weight:700}
+nav button.new{color:#9fd0ff}
+main{padding:16px;max-width:1440px;margin:0 auto}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 12px;border-radius:6px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--bad);border-color:#f0c4c4}
+.btn.sm{padding:3px 8px;font-size:12px}
+header .btn{background:#34475e;border-color:#47607d;color:#fff}
+header .btn.pri{background:var(--acc);border-color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card h3 .no{background:var(--hd2);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-left:5px solid var(--acc)}
+.kpi .l{font-size:12px;color:var(--sub)}
+.kpi .v{font-size:26px;font-weight:700;margin-top:2px}
+.kpi .s{font-size:11px;color:var(--sub)}
+.kpi.red{border-left-color:var(--bad)}.kpi.red .v{color:var(--bad)}
+.kpi.amb{border-left-color:var(--warn)}
+.kpi.grn{border-left-color:var(--ok)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 12px;margin-bottom:10px}
+.fld{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--sub)}
+.fld.w2{grid-column:span 2}.fld.full{grid-column:1/-1}
+.fld input,.fld select,.fld textarea{font:inherit;font-size:14px;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff;width:100%}
+.fld textarea{resize:vertical;min-height:54px}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid var(--accS);border-color:var(--acc)}
+.fld input[readonly]{background:#f5f7fa}
+.req::after{content:" *";color:var(--bad)}
+.inl{display:flex;gap:4px}.inl input{flex:1}
+.due{font-size:13px;color:var(--ink);padding:7px 0}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#f3f5f8;text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);font-weight:600;color:var(--sub);white-space:nowrap;position:sticky;top:0}
+.tbl td{padding:7px 8px;border-bottom:1px solid #edf0f4;vertical-align:top}
+.tbl tr.click{cursor:pointer}.tbl tr.click:hover td{background:#f5f9ff}
+.tbl tr.od td{background:#fff5f5}
+.wrapT{overflow:auto;max-height:65vh}
+.chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;white-space:nowrap}
+.st-new{background:#e7f0ff;color:#1f5fc4}.st-wip{background:#fff3dd;color:#a5620a}.st-confirm{background:#efe7ff;color:#6b3fc4}.st-closed{background:#e3f5ea;color:#17783f}.st-cancel{background:#eceef1;color:#78828f}
+.sev{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;color:#fff;font-weight:700;font-size:12px}
+.sA{background:var(--A)}.sB{background:var(--B)}.sC{background:var(--C)}
+.tag{font-size:12px;font-weight:600}.t-ok{color:var(--ok)}.t-late{color:var(--warn)}.t-over{color:var(--bad)}.t-pending{color:var(--sub)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+.filters .fld{min-width:120px}
+.actbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.actbar .ttl{font-size:17px;font-weight:700;margin-right:8px}
+.steps{display:flex;gap:0;margin-bottom:14px}
+.steps div{flex:1;text-align:center;padding:8px 4px;background:#e3e8ef;color:var(--sub);font-size:13px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%)}
+.steps div:first-child{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%)}
+.steps div.done{background:#bcd6f7;color:#1f4f8f}.steps div.cur{background:var(--acc);color:#fff;font-weight:700}
+.steps.cancel div{background:#e3e3e3;color:#999}
+.hint{font-size:12px;color:var(--sub)}
+.tl{border-left:2px solid var(--line);margin-left:6px;padding-left:14px}
+.tl .it{position:relative;margin-bottom:10px}
+.tl .it::before{content:"";position:absolute;left:-20px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--acc)}
+.tl .it.auto::before{background:#aab4c2}
+.tl .meta{font-size:12px;color:var(--sub)}
+.tl .txt{white-space:pre-wrap}
+.links a{display:block;font-size:12px;color:var(--acc);word-break:break-all}
+.dtw{display:flex;gap:4px;align-items:center;position:relative}
+.dtw input.dtd{flex:1.3;min-width:0}.dtw input.dtt{flex:1;min-width:0}
+.dtw.bad input{border-color:var(--bad)}
+.dtcal{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 6px;cursor:pointer;font-size:13px}
+.dtnat{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.dtq{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:3px;min-height:22px}
+.dtq button{border:1px solid var(--line);background:#f7f9fb;border-radius:12px;padding:1px 9px;font:inherit;font-size:12px;cursor:pointer;color:var(--sub)}
+.dtq button:hover{border-color:var(--acc);color:var(--acc)}
+.dtgood{color:var(--ok);font-weight:700;font-size:12.5px}.dtbad{color:var(--bad);font-weight:600;font-size:12px}
+input.invalid{border-color:var(--bad)!important;background:#fff6f6!important}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
+.fchip{border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:5px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+.fchip:hover{border-color:var(--acc)}.fchip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.phwrap{border:1.5px dashed var(--line);border-radius:8px;padding:10px}.phwrap.over{border-color:var(--acc);background:var(--accS)}
+.photos{display:flex;flex-wrap:wrap;gap:10px}
+.ph{position:relative;width:128px}
+.phimg{width:128px;height:96px;border-radius:6px;background:#f3f5f8;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:zoom-in;border:1px solid var(--line)}
+.phimg img{width:100%;height:100%;object-fit:cover}
+.phcap{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.phimg.file{flex-direction:column;gap:4px;cursor:pointer;background:#fbfcfd}
+.fext{font-weight:800;font-size:15px;color:#fff;background:#5b7a99;border-radius:4px;padding:3px 8px;letter-spacing:.5px}
+.e-pdf{background:#d93a3a}.e-xls,.e-xlsx,.e-csv{background:#1f9d55}.e-doc,.e-docx{background:#1f6feb}.e-ppt,.e-pptx{background:#e08a12}.e-msg,.e-eml{background:#6b3fc4}.e-zip{background:#78828f}
+.fkb{font-size:11px;color:var(--sub)}
+.phx{position:absolute;top:4px;right:4px;border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:22px;padding:0}
+.lb{position:fixed;inset:0;background:rgba(10,15,25,.92);z-index:100;display:flex;align-items:center;justify-content:center}
+.lb img{max-width:92vw;max-height:84vh;box-shadow:0 4px 30px #000}
+.lbbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 16px;color:#fff;font-size:13px}
+.lbnav{position:absolute;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.15);color:#fff;font-size:40px;width:52px;height:72px;cursor:pointer;border-radius:6px}
+.lbnav.l{left:12px}.lbnav.r{right:12px}
+.toast{position:fixed;right:16px;bottom:16px;background:#1f2d3d;color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.25s;z-index:99;pointer-events:none}
+.toast.on{opacity:1}.toast.err{background:var(--bad)}
+.chart{width:100%;height:auto;display:block}
+.empty{color:var(--sub);text-align:center;padding:24px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--acc);color:#fff}
+.rpthead{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+.rpthead h2{margin:0;font-size:20px}
+@media(max-width:900px){.g2{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.fld.w2{grid-column:1/-1}}
+@media print{header,nav,.noprint{display:none!important}body{background:#fff}main{padding:0;max-width:none}.card{break-inside:avoid;border-color:#ccc}.g2{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>客戶問題點管理系統</h1><span class="ver" id="ver"></span><button class="btn" id="btnWho" style="display:none" title="切換身分"></button>
+  <div class="filebar" id="filebar"></div>
+</header>
+<nav id="nav">
+  <button data-t="dash">儀表板</button>
+  <button data-t="list">案件清單</button>
+  <button data-t="new" class="new">＋ 新增案件</button>
+  <button data-t="rpt">統計月報</button>
+  <button data-t="set">設定</button>
+</nav>
+<main id="main"></main>
+<div id="whoOv"><div class="wbox" id="whoBox"></div></div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<div class="toast" id="toast"></div>
+<datalist id="dlPeople"></datalist><datalist id="dlCust"></datalist><datalist id="dlSite"></datalist><datalist id="dlModel"></datalist><datalist id="dlContact"></datalist>
+<script>
+'use strict';
+const VER='V2.1', SCHEMA=1, LS='CQ_DB';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const pad=n=>String(n).padStart(2,'0');
+const toLocal=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const nowL=()=>toLocal(new Date());
+const today=()=>nowL().slice(0,10);
+const ym=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+const P=s=>s?new Date(s.length===10?s+'T00:00':s):null;
+const fDT=s=>s?s.replace('T',' '):'';
+const fD=s=>s?s.slice(0,10):'';
+const r1=n=>Math.round(n*10)/10;
+
+const STATUS=[{k:'new',zh:'新案',en:'New'},{k:'wip',zh:'處理中',en:'In progress'},{k:'confirm',zh:'待客戶確認',en:'Awaiting customer'},{k:'closed',zh:'結案',en:'Closed'},{k:'cancel',zh:'取消',en:'Cancelled'}];
+const stOf=k=>STATUS.find(s=>s.k===k)||STATUS[0];
+const HANDLE=['遠端/電話處理','派工到場','回廠維修','更換/借機','其他'];
+const TLTYPE=['電話','Mail','到場','內部討論','客戶回覆','其他'];
+
+function defMaster(){return{
+  customers:[], people:[],
+  families:['VR','CL','DS','SV','LR','RB','PM','SM','FX','HK','其他品牌'],
+  categories:[{zh:'異音/振動',en:'Noise / Vibration'},{zh:'過熱',en:'Overheating'},{zh:'抽速不足/真空度異常',en:'Pumping speed / Vacuum level'},{zh:'漏油/漏水',en:'Oil / Water leak'},{zh:'電氣/控制異常',en:'Electrical / Control'},{zh:'停機/無法啟動',en:'Trip / Fails to start'},{zh:'維修品質',en:'Repair quality'},{zh:'交期延誤',en:'Delivery delay'},{zh:'服務態度/溝通',en:'Service / Communication'},{zh:'報價/帳務',en:'Quotation / Billing'},{zh:'其他',en:'Other'}],
+  sources:[{zh:'Mail',en:'Email'},{zh:'電話',en:'Phone'},{zh:'業務轉達',en:'Via Sales'},{zh:'LINE',en:'LINE'},{zh:'現場反映',en:'On-site'},{zh:'集團轉介',en:'Group referral'},{zh:'其他',en:'Other'}],
+  costTypes:[{zh:'保固',en:'Warranty'},{zh:'合約內',en:'Contract'},{zh:'收費',en:'Chargeable'},{zh:'善意處理',en:'Goodwill'},{zh:'待定',en:'TBD'}],
+  severities:[{code:'A',zh:'停機',en:'Line down',respVal:4,respUnit:'h',actDays:3},{code:'B',zh:'影響生產',en:'Production impact',respVal:1,respUnit:'wd',actDays:5},{code:'C',zh:'一般',en:'General',respVal:3,respUnit:'wd',actDays:10}]
+}}
+function blankDB(){return{schemaVer:SCHEMA,app:'CQ',updatedAt:'',master:defMaster(),cases:[]}}
+const OLDFAM='乾式螺旋泵|羅茨泵|渦輪分子泵|油封式旋片泵|爪式泵|檢漏儀|其他';
+function migrate(d){d.master=Object.assign(defMaster(),d.master||{});if((d.master.families||[]).join('|')===OLDFAM)d.master.families=defMaster().families;d.cases=d.cases||[];d.cases.forEach(c=>{c.timeline=c.timeline||[];c.d8=c.d8||{on:false};c.atts=c.atts||[];if(c.photos&&c.photos.length){c.photos.forEach(p=>c.atts.push({id:p.id,stage:1,img:true,dir:'photos',f:p.f,name:p.name,at:p.at,kb:p.kb}))}delete c.photos;if(c.contactInfo&&!(c.mobile||c.tel||c.email)){const v=c.contactInfo;if(/@/.test(v))c.email=v;else if(/^09/.test(v.replace(/\D/g,'')))c.mobile=v;else c.tel=v}delete c.contactInfo});d.schemaVer=SCHEMA;return d}
+let DB=null;try{DB=JSON.parse(localStorage.getItem(LS))}catch(e){}
+if(!DB||DB.app!=='CQ')DB=blankDB();migrate(DB);
+
+/* ---------- 共用設定（入口網站維護；中繼複製到資料夾的 _共用設定.json）＋ 身分與權限 ---------- */
+const SHARED_AUTO='_共用設定.json';
+let SH=null,SHmod=0;try{const j=JSON.parse(localStorage.getItem('CQ_SH'));if(j&&j.app==='shared-settings')SH=j}catch(e){}
+async function readShared(){if(!DH||!fileOK)return false;try{const f=await(await DH.getFileHandle(SHARED_AUTO)).getFile();if(SH&&SHmod===f.lastModified)return false;
+  const j=JSON.parse((await f.text()).replace(/^﻿/,''));if(!j||j.app!=='shared-settings')return false;const ch=JSON.stringify(j)!==JSON.stringify(SH);SH=j;SHmod=f.lastModified;try{localStorage.setItem('CQ_SH',JSON.stringify(j))}catch(e){}return ch}catch(e){return false}}
+const shPeople=()=>SH&&Array.isArray(SH.people)?SH.people.filter(p=>p&&p.name&&p.active!==false):[];
+const shCust=()=>SH&&Array.isArray(SH.customers)?SH.customers.filter(c=>c&&c.name):[];
+const shFam=()=>{if(!SH)return[];const f=Array.isArray(SH.families)?SH.families.filter(Boolean):[];return f.length?f:Object.keys(SH.models||{})};
+const shOn=k=>k==='people'?shPeople().length>0:k==='customers'?shCust().length>0:shFam().length>0;
+function custList(){if(!shOn('customers'))return DB.master.customers;return shCust().map(c=>{const loc=DB.master.customers.find(x=>x.name===c.name);return{name:c.name,sites:(loc&&loc.sites)||c.area||''}})}
+function peopleList(){if(!shOn('people'))return DB.master.people;return shPeople().filter(p=>(p.roles||[]).some(r=>r!=='viewer')).map(p=>p.name)}
+function famList(){return shOn('families')?shFam():DB.master.families}
+function shModels(fam){if(!SH||!SH.models||!fam)return[];const k=Object.keys(SH.models).find(x=>x.toLowerCase()===String(fam).toLowerCase());return k?SH.models[k]||[]:[]}
+
+const CQ_ROLES=[['chief','主任'],['eng','工程師'],['sales','業務'],['admin','管理者'],['viewer','檢視者'],['guest','其他（無帳號）']];
+const PERM_DEF=[ // [key, 功能, 說明, 預設：主任 工程師 業務 管理者 檢視者 其他]
+ ['case.new','新增案件','','YYYYNN'],
+ ['case.edit','修改案件','含處理歷程、附件、送客戶確認','YYYYNN'],
+ ['case.close','結案、取消、重新開啟','','YYNYNN'],
+ ['case.del','刪除案件','','YNNYNN'],
+ ['rpt.view','統計月報','','YYYYYN'],
+ ['export','匯出 JSON 備份','','YNNYNN'],
+ ['set.master','設定：主檔與時效','問題分類、來源、費用歸屬、急迫度；共用設定還沒管理的人員／客戶／機種','YNNYNN'],
+ ['set.data','設定：資料管理','匯入、載入範例、清除全部案件','NNNYNN']];
+const PV=[['Y','可'],['N','不可']];
+const ssx={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}},del(k){try{sessionStorage.removeItem(k)}catch(e){}}};
+const AU=w=>{const m=DB.master;if(!m.auth||typeof m.auth!=='object'){if(!w)return{perms:{},pins:{},adminHash:''};m.auth={}}const a=m.auth;if(w){a.perms=a.perms||{};a.pins=a.pins||{};a.adminHash=a.adminHash||''}return{perms:a.perms||{},pins:a.pins||{},adminHash:a.adminHash||'',_:a}};
+const authOn=()=>shPeople().length>0;
+function roleOf(p){const r=p.roles||[];return r.includes('chief')?'chief':(r.includes('eng')||r.includes('rs')||r.includes('rsSched'))?'eng':(r.includes('salesOut')||r.includes('salesIn'))?'sales':r.includes('viewer')?'viewer':null}
+function curRole(){if(!authOn())return'admin';return ssx.get('cq_role')||'guest'}
+function PM(key){const role=curRole();if(key==='set.perm')return role==='admin'?'Y':'N';const i=CQ_ROLES.findIndex(r=>r[0]===role);const p=AU().perms[key];if(p&&p[role])return p[role];const d=PERM_DEF.find(x=>x[0]===key);return d?(d[3][i]||'N'):'N'}
+const can=k=>PM(k)==='Y';
+function need(k){if(can(k))return true;toast('目前身分（'+((CQ_ROLES.find(r=>r[0]===curRole())||[])[1]||'訪客')+'）沒有這個權限',true);return false}
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('fsd:'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const roleName=r=>(CQ_ROLES.find(x=>x[0]===r)||[])[1]||'';
+function paintWho(){const b=$('#btnWho');if(!b)return;if(!authOn()){b.style.display='none';return}b.style.display='';const r=curRole();b.textContent='👤 '+(r==='guest'?'訪客（只能看）':r==='admin'?'管理者':(ssx.get('cq_me')||'')+'｜'+roleName(r))}
+function whoClose(){$('#whoOv').classList.remove('on')}
+function whoDialog(){
+  const ppl=shPeople(),box=$('#whoBox');
+  const grp=(r,lab)=>{const L=ppl.filter(p=>roleOf(p)===r);return L.length?`<div class="hint">${lab}</div><div class="wrow">${L.map(p=>`<button class="btn" data-who="${r}|${esc(p.name)}">${esc(p.name)}</button>`).join('')}</div>`:''};
+  box.innerHTML=`<h3 style="margin:0 0 10px">選擇身分</h3>${grp('chief','主任')}${grp('eng','工程師')}${grp('sales','業務')}${grp('viewer','檢視者（只能看）')}
+    <div class="hint">其他</div><div class="wrow"><button class="btn" data-who="admin|">🔧 系統管理員</button><button class="btn" data-who="guest|">👀 訪客（不登入，只能看）</button></div>
+    <p class="hint">人員與 PIN 由入口網站「共用設定」維護，和訊息單系統用同一組 PIN。</p><div style="text-align:right"><button class="btn" data-wx="1">取消</button></div>`;
+  $('#whoOv').classList.add('on');
+  box.onclick=async e=>{const t=e.target;if(t.dataset.wx){whoClose();return}if(!t.dataset.who)return;const[role,name]=t.dataset.who.split('|');
+    if(role==='guest'){ssx.set('cq_role','guest');ssx.del('cq_me');whoClose();afterLogin();return}
+    const isA=role==='admin',p=isA?null:ppl.find(x=>x.name===name),local=isA?AU().adminHash:(AU().pins[name]||''),hash=isA?local:((p&&p.pin)||local),first=!hash;
+    box.onclick=e2=>{if(e2.target.dataset.wx)whoClose()};
+    box.innerHTML=`<h3 style="margin:0 0 10px">${isA?'系統管理員':esc(name)}</h3><label class="fld"><span>${isA?'管理者密碼':'PIN'}${first?'（第一次使用，請設定）':''}</span><input type="password" id="pin1" autocomplete="off"></label>
+      ${first?'<label class="fld"><span>再輸入一次</span><input type="password" id="pin2" autocomplete="off"></label>':''}<div style="text-align:right;margin-top:10px"><button class="btn" data-wx="1">取消</button> <button class="btn pri" id="pinOk">確定</button></div>`;
+    const go2=async()=>{const v=$('#pin1').value;if(!v){toast('請輸入',true);return}
+      if(first){if(!isA&&!/^\d{4,8}$/.test(v)){toast('PIN 要 4～8 位數字',true);return}if(isA&&v.length<4){toast('密碼至少 4 碼',true);return}if(v!==$('#pin2').value){toast('兩次輸入不同',true);return}
+        const h=await sha((isA?'admin:':'pin:')+v);if(isA)AU(true)._.adminHash=h;else AU(true)._.pins[name]=h;persist()}
+      else if(await sha((isA?'admin:':'pin:')+v)!==hash){toast(isA?'密碼錯誤':'PIN 錯誤',true);return}
+      ssx.set('cq_role',role);if(isA)ssx.del('cq_me');else ssx.set('cq_me',name);whoClose();afterLogin()};
+    $('#pinOk').onclick=go2;$('#pin1').onkeydown=e=>{if(e.key==='Enter'&&!first)go2()};$('#pin1').focus()};
+}
+function afterLogin(){paintWho();toast('目前身分：'+$('#btnWho').textContent.replace('👤 ',''));if(ST.tab==='edit'&&ST.draft){render()}else go(ST.tab)}
+const SET_TABS=[['master','主檔與時效','set.master'],['shared','人員／客戶／機種','set.master'],['data','資料管理','set.data'],['perm','權限','set.perm']];
+const setTabs=()=>SET_TABS.filter(t=>can(t[2]));
+function tabOK(t){return t==='new'?can('case.new'):t==='rpt'?can('rpt.view'):t==='set'?setTabs().length>0:true}
+
+function blankCase(){const m=DB.master;return{id:uid(),no:'',status:'new',receivedAt:nowL(),source:(m.sources[0]||{}).zh||'',receiver:'',customer:'',site:'',contact:'',contactDept:'',contactTitle:'',mobile:'',tel:'',ext:'',email:'',family:'',model:'',serial:'',woNo:'',severity:'B',owner:'',desc:'',attach:'',firstRespAt:'',category:'',handle:'',measureAt:'',phenomenon:'',containment:'',result:'',custConfirmAt:'',custReply:'',closedAt:'',costType:'',rootCause:'',permanent:'',d8:{on:false},timeline:[],atts:[],createdAt:'',updatedAt:''}}
+
+/* ---------- 時效 ---------- */
+function addWD(d,n){const r=new Date(d);let k=0;while(k<n){r.setDate(r.getDate()+1);const w=r.getDay();if(w!==0&&w!==6)k++}return r}
+const sevOf=code=>DB.master.severities.find(s=>s.code===code)||DB.master.severities[DB.master.severities.length-1]||{code:'C',respVal:3,respUnit:'wd',actDays:10};
+function dueResp(c){const r=P(c.receivedAt);if(!r)return null;const s=sevOf(c.severity);return s.respUnit==='h'?new Date(r.getTime()+(+s.respVal)*3600e3):addWD(r,+s.respVal)}
+function dueAct(c){const r=P(c.receivedAt);if(!r)return null;const d=addWD(r,+sevOf(c.severity).actDays);d.setHours(23,59,59,0);return d}
+const isOpen=c=>c.status!=='closed'&&c.status!=='cancel';
+function respState(c){if(c.status==='cancel')return'';const due=dueResp(c);if(!due)return'';if(c.firstRespAt)return P(c.firstRespAt)<=due?'ok':'late';return new Date()>due?'over':'pending'}
+function actState(c){if(c.status==='cancel')return'';const due=dueAct(c);if(!due)return'';const m=c.measureAt||(c.status==='closed'?fD(c.closedAt):'');if(m)return P(m)<=due?'ok':'late';return new Date()>due?'over':'pending'}
+const overdue=c=>isOpen(c)&&(respState(c)==='over'||actState(c)==='over');
+const respHrs=c=>c.firstRespAt&&c.receivedAt?(P(c.firstRespAt)-P(c.receivedAt))/3600e3:null;
+const ageDays=c=>{const r=P(c.receivedAt);if(!r)return 0;const e=c.status==='closed'&&c.closedAt?P(c.closedAt):new Date();return(e-r)/864e5};
+function fmtDue(d){return d?toLocal(d).replace('T',' '):'—'}
+function stateTag(s,due){const t={ok:'✓ 達成',late:'⚠ 逾時完成',over:'✕ 已逾期',pending:''}[s];if(s==='pending'&&due){const h=(due-new Date())/3600e3;return`<span class="tag t-pending">剩 ${h<48?r1(h)+' 小時':r1(h/24)+' 天'}</span>`}return t?`<span class="tag t-${s}">${t}</span>`:''}
+
+/* ---------- 狀態 / 存檔 ---------- */
+let ST={tab:'dash',draft:null,isNew:false,dirty:false,f:{status:'open',sev:'',cust:'',fam:'',owner:'',from:'',to:'',q:''},rm:ym(new Date()),lang:'zh'};
+function persist(){DB.updatedAt=new Date().toISOString();try{localStorage.setItem(LS,JSON.stringify(DB))}catch(e){toast('本機儲存失敗：'+e.message,true)}scheduleFileSave()}
+function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className='toast on'+(err?' err':'');clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='toast',2600)}
+function genNo(c){const d=P(c.receivedAt)||new Date();const pre=`CQ-${String(d.getFullYear()).slice(2)}${pad(d.getMonth()+1)}-`;let m=0;DB.cases.forEach(x=>{if(x.no&&x.no.startsWith(pre)){const n=parseInt(x.no.slice(pre.length),10);if(n>m)m=n}});return pre+String(m+1).padStart(3,'0')}
+
+/* ---------- 資料夾同步 V2：每案一檔（多人共用，可放 SharePoint／OneDrive 同步資料夾或 NAS） ----------
+   資料夾結構：cq_settings.json（主檔）＋ cases/cq_<id>.json（每件案件一個檔）＋ photos/、files/（附件）
+   只寫入有變動的檔案；寫入前比對檔案的 updatedAt，被別人改過會詢問，不會默默蓋掉。 */
+const FSA='showDirectoryPicker' in window;
+const DATAFILE='客戶問題點資料.json', SETFILE='cq_settings.json', CASEDIR='cases', PHOTODIR='photos', POLL_SEC=30;
+let DH=null,CDH=null,PDH=null,FDH=null,fileOK=false,lastSync=null,saveTimer=null,busy=false,pend=false,dupWarned='';
+const LS_SNAP='CQ_SNAP';
+/* SNAP：最後一次和資料夾一致的狀態（雜湊＋updatedAt），用來判斷「我改的」和「別人改的」 */
+let SNAP=(()=>{try{const s=JSON.parse(localStorage.getItem(LS_SNAP));if(s&&s.cases)return {mh:s.mh||'',mAt:s.mAt||'',cases:new Map(Object.entries(s.cases))}}catch(e){}return {mh:'',mAt:'',cases:new Map()}})();
+const modCache=new Map(); // 檔名 → {mod,data}，沒變的檔案不重讀
+function hsh(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length}
+const caseFile=id=>'cq_'+String(id).replace(/[^0-9a-zA-Z_-]/g,'_')+'.json';
+const ME=()=>{const s=ssx.get('cq_me');if(authOn()&&s)return s;try{return localStorage.getItem('CQ_ME')||''}catch(e){return ''}};
+function askMe(){let n=ME();if(n||authOn())return n;n=(prompt('請輸入你的名字（記錄是誰修改案件，只問一次）','')||'').trim();if(n)try{localStorage.setItem('CQ_ME',n)}catch(e){}return n}
+function saveSnap(){try{localStorage.setItem(LS_SNAP,JSON.stringify({mh:SNAP.mh,mAt:SNAP.mAt,cases:Object.fromEntries(SNAP.cases)}))}catch(e){}}
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('CQ_FS',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(k){try{const db=await idb();return await new Promise(res=>{const q=db.transaction('h').objectStore('h').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)})}catch(e){return null}}
+async function idbSet(k,v){try{const db=await idb();db.transaction('h','readwrite').objectStore('h').put(v,k)}catch(e){}}
+async function ensurePerm(ask){if(!DH)return false;try{let p=await DH.queryPermission({mode:'readwrite'});if(p!=='granted'&&ask)p=await DH.requestPermission({mode:'readwrite'});fileOK=p==='granted'}catch(e){fileOK=false}
+  if(fileOK&&!CDH){try{CDH=await DH.getDirectoryHandle(CASEDIR,{create:true});PDH=await DH.getDirectoryHandle(PHOTODIR,{create:true});FDH=await DH.getDirectoryHandle('files',{create:true})}catch(e){fileOK=false;toast('資料夾存取失敗：'+e.message,true)}}return fileOK}
+async function readJSON(dir,name){const f=await(await dir.getFileHandle(name)).getFile();return {data:JSON.parse((await f.text()).replace(/^﻿/,'')),mod:f.lastModified}}
+async function writeJSON(dir,name,obj){const fh=await dir.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(obj,null,1));await w.close();try{return (await fh.getFile()).lastModified}catch(e){return Date.now()}}
+async function exists(dir,name){try{await dir.getFileHandle(name);return true}catch(e){return false}}
+const normCase=c=>migrate({master:DB.master,cases:[structuredClone(c)]}).cases[0];
+async function linkDir(){try{const h=await showDirectoryPicker({id:'cq',mode:'readwrite'});DH=h;CDH=null;PDH=null;FDH=null;photoCache.clear();modCache.clear();SNAP={mh:'',mAt:'',cases:new Map()};saveSnap();await idbSet('dh',h);await loadFromFile(true)}catch(e){if(e.name!=='AbortError')toast('連結失敗：'+e.message,true)}}
+
+/* 第一次連結：舊版單一檔自動轉換，或空資料夾以本機資料建立 */
+async function prepareFolder(){
+  if(await exists(DH,SETFILE)){if(await exists(DH,DATAFILE)&&dupWarned!=='old'){dupWarned='old';toast('資料夾裡有舊版「'+DATAFILE+'」：可能有電腦還在用 V1 版程式，請更新到 V2',true)}return true}
+  let old=null;try{old=(await readJSON(DH,DATAFILE)).data}catch(e){}
+  let n=0;for await(const [nm,h] of CDH.entries())if(h.kind==='file'&&/\.json$/i.test(nm))n++;
+  if(old&&old.app==='CQ'){
+    if(!confirm(`這個資料夾是舊版格式（${(old.cases||[]).length} 件案件存在同一個檔案）。\n\n要轉換成多人共用格式（V2）嗎？\n・每件案件存成一個檔案（cases 資料夾），多人同時修改不同案件不會互相覆蓋\n・舊檔改名保留為備份\n・轉換後所有電腦都要改用 V2 版程式`))return false;
+    const d=migrate(old);
+    await writeJSON(DH,SETFILE,{app:'CQ-settings',schemaVer:2,updatedAt:new Date().toISOString(),updatedBy:ME(),master:d.master});
+    for(const c of d.cases)await writeJSON(CDH,caseFile(c.id),{app:'CQ-case',schemaVer:2,data:c});
+    await writeJSON(DH,'客戶問題點資料_V1備份_'+today()+'.json',old);
+    try{await DH.removeEntry(DATAFILE)}catch(e){}
+    DB=d;SNAP={mh:'',mAt:'',cases:new Map()};modCache.clear();
+    toast(`已轉換：${d.cases.length} 件案件`);return true}
+  if(!n){
+    if(DB.cases.length&&!confirm(`這個資料夾還沒有資料。\n要把這台電腦目前的 ${DB.cases.length} 件案件寫入資料夾嗎？\n（取消＝從空白開始）`)){DB={...blankDB(),master:DB.master}}
+    await writeJSON(DH,SETFILE,{app:'CQ-settings',schemaVer:2,updatedAt:new Date().toISOString(),updatedBy:ME(),master:DB.master});
+    for(const c of DB.cases)await writeJSON(CDH,caseFile(c.id),{app:'CQ-case',schemaVer:2,data:c});
+    SNAP={mh:'',mAt:'',cases:new Map()};return true}
+  await writeJSON(DH,SETFILE,{app:'CQ-settings',schemaVer:2,updatedAt:new Date().toISOString(),updatedBy:ME(),master:DB.master});
+  return true;
+}
+/* 讀取資料夾並和本機合併：本機有尚未寫入的修改就保留，其餘以資料夾為準。回傳變動件數 */
+async function readAll(){
+  let changed=0;const first=!SNAP.mh&&SNAP.cases.size===0;
+  const s=await readJSON(DH,SETFILE);if(!s.data||s.data.app!=='CQ-settings')throw new Error(SETFILE+' 格式不對');
+  const fm=migrate({master:s.data.master,cases:[]}).master,fmh=hsh(JSON.stringify(fm)),fmAt=s.data.updatedAt||'';
+  const localDirtyM=SNAP.mh&&hsh(JSON.stringify(DB.master))!==SNAP.mh;
+  if(!(localDirtyM&&fmAt===SNAP.mAt)){if(localDirtyM)toast('主檔設定剛被 '+(s.data.updatedBy||'其他電腦')+' 修改，已載入對方版本，請重新修改',true);if(hsh(JSON.stringify(DB.master))!==fmh){DB.master=fm;changed++}SNAP.mh=fmh;SNAP.mAt=fmAt}
+  const folder=new Map();
+  for await(const [nm,h] of CDH.entries()){
+    if(h.kind!=='file'||!/^cq_.*\.json$/i.test(nm))continue;
+    const f=await h.getFile();const mc=modCache.get(nm);let d;
+    if(mc&&mc.mod===f.lastModified)d=mc.data;
+    else{try{const j=JSON.parse((await f.text()).replace(/^﻿/,''));if(!j||j.app!=='CQ-case'||!j.data||!j.data.id)continue;d=j.data;modCache.set(nm,{mod:f.lastModified,data:d})}catch(e){continue}}
+    folder.set(d.id,{d,mod:f.lastModified});
+  }
+  const out=[],seen=new Set();
+  for(const [id,{d,mod}] of folder){
+    seen.add(id);const loc=DB.cases.find(x=>x.id===id),sn=SNAP.cases.get(id);
+    if(!loc&&sn&&(d.updatedAt||'')===sn.at)continue;                              // 我刪除了、尚未寫入（別人改過就保留對方版本）
+    const fc=normCase(d),fh=hsh(JSON.stringify(fc));
+    const localDirty=loc&&sn&&hsh(JSON.stringify(loc))!==sn.h;
+    if(localDirty){out.push(loc);continue}                                        // 我改了還沒寫入 → 保留，寫入時若別人也改過會詢問
+    if(!loc||hsh(JSON.stringify(loc))!==fh)changed++;
+    out.push(fc);SNAP.cases.set(id,{h:fh,at:d.updatedAt||'',mod});
+  }
+  const extra=DB.cases.filter(c=>!seen.has(c.id)&&!SNAP.cases.has(c.id));
+  let keepExtra=!first||!extra.length||!folder.size||confirm(`這台電腦有 ${extra.length} 件案件不在共用資料夾裡（可能是舊的本機暫存）。\n\n確定＝加入共用資料夾\n取消＝捨棄這些本機暫存，以共用資料夾為準`);
+  for(const c of DB.cases){if(seen.has(c.id))continue;
+    if(!SNAP.cases.has(c.id)){if(keepExtra)out.push(c);else changed++;continue}  // 本機新增、尚未寫入
+    SNAP.cases.delete(c.id);changed++}                                            // 別人刪除
+  out.sort((a,b)=>String(a.receivedAt||'').localeCompare(String(b.receivedAt||'')));
+  DB.cases=out;
+  const nos={};DB.cases.forEach(c=>{if(c.no)(nos[c.no]=nos[c.no]||[]).push(c)});
+  const dup=Object.keys(nos).filter(k=>nos[k].length>1);
+  if(dup.length&&dupWarned!==dup.join()){dupWarned=dup.join();toast('案號重複：'+dup.join('、')+'（兩台電腦同時新增），請在其中一件的處理歷程註明',true)}
+  return changed;
+}
+async function loadFromFile(ask,quiet){
+  if(!await ensurePerm(ask)){updFile();return}
+  if(busy){pend=true;return}busy=true;
+  try{
+    if(!await prepareFolder()){busy=false;updFile();return}
+    const ch=(await readAll())+((await readShared())?1:0);lastSync=new Date();
+    try{localStorage.setItem(LS,JSON.stringify(DB))}catch(e){}saveSnap();
+    if(ST.tab==='edit'&&ST.draft&&!ST.isNew&&!ST.dirty){const c=DB.cases.find(x=>x.id===ST.draft.id);ST.draft=c?structuredClone(c):null;if(!c)ST.tab='list'}
+    if(ch||!quiet)render();if(!quiet)toast('已載入資料（'+DB.cases.length+' 件）');else if(ch)toast(`已更新 ${ch} 筆（其他電腦修改）`);
+  }catch(e){toast('讀取資料失敗：'+e.message,true)}
+  busy=false;updFile();if(pend){pend=false;scheduleFileSave()}
+}
+/* 寫入：只寫有變動的案件／主檔，寫入前檢查是否被別人改過 */
+async function writeFile(){
+  if(!DH||!await ensurePerm(false)){updFile();return}
+  if(busy){pend=true;return}busy=true;const conf=[];
+  try{
+    if(!await prepareFolder()){busy=false;updFile();return}
+    await readAll();                                                               // 先抓別人的最新資料（也讓新案號不重複）
+    const nosTaken=new Set(DB.cases.filter(c=>SNAP.cases.has(c.id)).map(c=>c.no));
+    for(const c of DB.cases)if(!SNAP.cases.has(c.id)&&c.no&&nosTaken.has(c.no)){const o=c.no;c.no='';c.no=genNo(c);c.timeline=c.timeline||[];c.timeline.push({id:uid(),at:nowL(),by:ME(),type:'其他',text:`案號 ${o} 已被其他電腦使用，自動改為 ${c.no}`,auto:true});nosTaken.add(c.no);toast(`案號 ${o} 已被使用，改為 ${c.no}`,true)}
+    const mj=JSON.stringify(DB.master),mh=hsh(mj);
+    if(mh!==SNAP.mh){
+      const at=new Date().toISOString();await writeJSON(DH,SETFILE,{app:'CQ-settings',schemaVer:2,updatedAt:at,updatedBy:ME(),master:DB.master});SNAP.mh=mh;SNAP.mAt=at}
+    const ids=new Set();
+    for(const c of DB.cases){
+      ids.add(c.id);const j=JSON.stringify(c),h=hsh(j),sn=SNAP.cases.get(c.id);
+      if(sn&&sn.h===h)continue;
+      let cur=null;try{cur=await readJSON(CDH,caseFile(c.id))}catch(e){}
+      if(cur&&sn&&cur.data&&cur.data.data&&(cur.data.data.updatedAt||'')!==sn.at){conf.push({c,cur});continue}
+      const mod=await writeJSON(CDH,caseFile(c.id),{app:'CQ-case',schemaVer:2,data:c});
+      SNAP.cases.set(c.id,{h,at:c.updatedAt||'',mod});modCache.delete(caseFile(c.id));
+    }
+    for(const id of [...SNAP.cases.keys()]){if(ids.has(id))continue;try{await CDH.removeEntry(caseFile(id))}catch(e){}SNAP.cases.delete(id);modCache.delete(caseFile(id))}
+    lastSync=new Date();try{localStorage.setItem(LS,JSON.stringify(DB))}catch(e){}saveSnap();
+  }catch(e){toast('寫入資料失敗：'+e.message,true)}
+  busy=false;
+  for(const {c,cur} of conf){
+    const o=cur.data.data,by=o.updatedBy||'其他電腦',t=String(o.updatedAt||'').replace('T',' ').slice(0,16);
+    if(confirm(`案件 ${c.no} 剛被 ${by} 修改（${t} UTC）。\n\n確定＝用我的版本覆蓋\n取消＝放棄我的修改，載入 ${by} 的版本`)){SNAP.cases.set(c.id,{h:'',at:o.updatedAt||'',mod:cur.mod});pend=true}
+    else{const d=normCase(o),i=DB.cases.findIndex(x=>x.id===c.id);if(i>=0)DB.cases[i]=d;SNAP.cases.set(c.id,{h:hsh(JSON.stringify(d)),at:o.updatedAt||'',mod:cur.mod});
+      if(ST.tab==='edit'&&ST.draft&&ST.draft.id===c.id){ST.draft=structuredClone(d);ST.dirty=false}render();toast('已載入 '+by+' 的版本')}
+  }
+  if(conf.length){try{localStorage.setItem(LS,JSON.stringify(DB))}catch(e){}saveSnap()}
+  updFile();if(pend){pend=false;scheduleFileSave()}
+}
+function scheduleFileSave(){if(!DH||!fileOK)return;clearTimeout(saveTimer);saveTimer=setTimeout(()=>writeFile(),600)}
+/* 定時讀取其他電腦的修改（編輯中且未存檔時暫停） */
+setInterval(()=>{if(DH&&fileOK&&!busy&&document.visibilityState==='visible'&&!(ST.tab==='edit'&&ST.dirty))loadFromFile(false,true)},POLL_SEC*1000);
+function updFile(){
+  const fb=$('#filebar');let s;
+  if(!FSA)s=`<span class="fstat warn">此瀏覽器不支援資料夾存取（請用 Chrome／Edge），目前只能匯入／匯出 JSON，無法存附件</span><button class="btn" data-a="imp">匯入 JSON</button><button class="btn pri" data-a="exp">匯出 JSON</button>`;
+  else if(!DH)s=`<span class="fstat warn">資料夾：未連結（資料只存在本機瀏覽器，無法存附件）</span><button class="btn pri" data-a="link">連結資料夾</button>`;
+  else if(!fileOK)s=`<span class="fstat warn">資料夾：${esc(DH.name)}　⚠ 需重新授權</span><button class="btn pri" data-a="perm">重新連結</button><button class="btn" data-a="link">換資料夾</button>`;
+  else s=`<span class="fstat">資料夾：${esc(DH.name)}　✓ ${lastSync?'同步 '+pad(lastSync.getHours())+':'+pad(lastSync.getMinutes()):''}${ME()?'　｜　'+esc(ME()):''}</span><button class="btn" data-a="reload">重新載入</button><button class="btn" data-a="link">換資料夾</button>`;
+  fb.innerHTML=s
+}
+$('#filebar').onclick=e=>{const a=e.target.dataset.a;if(!a)return;
+  if(a==='link')linkDir();else if(a==='perm'||a==='reload')loadFromFile(true);else if(a==='exp'){if(need('export'))exportJSON()}else if(a==='imp')importJSON()};
+
+/* ---------- 附件（照片＋檔案，各段分開） ---------- */
+const STG={1:'受理',2:'初步調查',3:'處置與客戶確認',4:'結案',5:'處理歷程'};
+const MAXMB=25;
+const photoCache=new Map();
+async function compressImage(file,max=1600,q=0.82){
+  const bmp=await createImageBitmap(file);let{width:w,height:h}=bmp;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(bmp,0,0,w,h);bmp.close&&bmp.close();
+  return await new Promise(r=>cv.toBlob(r,'image/jpeg',q))
+}
+const dirOf=a=>a.dir==='files'?FDH:PDH;
+const safeName=n=>String(n||'file').replace(/[\\/:*?"<>|#%]/g,'_').slice(-80);
+const extOf=n=>{const m=/\.([a-z0-9]{1,5})$/i.exec(n||'');return m?m[1].toUpperCase():'FILE'};
+async function writeBlob(dir,fname,blob){const fh=await dir.getFileHandle(fname,{create:true});const w=await fh.createWritable();await w.write(blob);await w.close()}
+async function addAtts(files,stage){
+  files=[...files].filter(Boolean);if(!files.length)return;stage=+stage||1;
+  if(!DH||!fileOK||!PDH||!FDH){alert('上傳檔案前，請先按右上角「連結資料夾」，選擇 SharePoint 同步的資料夾。\n照片存在 photos 子資料夾，其他檔案存在 files 子資料夾。');return}
+  let n=0;
+  for(const f of files){try{
+    const isImg=f.type&&/^image\/(jpeg|png|webp|bmp|gif)$/i.test(f.type);
+    if(isImg){
+      let blob;try{blob=await compressImage(f)}catch(e){blob=null}
+      if(blob){const fname=`${ST.draft.id}_${uid()}.jpg`;await writeBlob(PDH,fname,blob);photoCache.set('photos/'+fname,URL.createObjectURL(blob));
+        ST.draft.atts.push({id:uid(),stage,img:true,dir:'photos',f:fname,name:f.name&&f.name!=='image.png'?f.name:'貼上圖片',at:nowL(),kb:Math.round(blob.size/1024)});n++;continue}
+    }
+    if(f.size>MAXMB*1048576){toast(`${f.name} 超過 ${MAXMB}MB，未上傳`,true);continue}
+    const fname=`${ST.draft.id}_${uid()}_${safeName(f.name)}`;await writeBlob(FDH,fname,f);
+    ST.draft.atts.push({id:uid(),stage,img:false,dir:'files',f:fname,name:f.name||'檔案',mime:f.type||'',at:nowL(),kb:Math.round(f.size/1024)});n++
+  }catch(e){toast('上傳失敗：'+(f.name||'')+' '+e.message,true)}}
+  if(n){markDirty();drawAtts(stage);toast(`已加入 ${n} 個附件到「${STG[stage]}」，記得按儲存`)}
+}
+async function attURL(a){
+  const key=a.dir+'/'+a.f;if(photoCache.has(key))return photoCache.get(key);
+  const d=dirOf(a);if(!d)return null;
+  try{const f=await(await d.getFileHandle(a.f)).getFile();const u=URL.createObjectURL(a.mime&&!f.type?new Blob([f],{type:a.mime}):f);photoCache.set(key,u);return u}catch(e){return null}
+}
+function attBox(n){return`<div class="phwrap" data-stdrop="${n}"><div class="photos" data-attbox="${n}"></div>
+  <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="btn">📎 上傳檔案／照片<input type="file" multiple hidden data-attin="${n}"></label><span class="hint">照片自動壓縮；PDF、Excel、Word、Mail 等保留原檔（單檔 ${MAXMB}MB 內）。可拖曳到框內，或點本段任一處後按 Ctrl+V 貼上截圖</span></div></div>`}
+const attSec=n=>`<div class="fld" style="margin-top:10px"><span>📎 附件（${STG[n]}）</span>${attBox(n)}</div>`;
+function drawAtts(stage){
+  const b=document.querySelector(`[data-attbox="${stage}"]`);if(!b)return;const ps=(ST.draft.atts||[]).filter(a=>(a.stage||1)==stage);
+  if(!ps.length){b.innerHTML='<div class="hint">尚無附件</div>';return}
+  b.innerHTML=ps.map(a=>`<div class="ph"><div class="phimg ${a.img?'':'file'}" data-view="${a.id}" title="${esc(a.name)}">${a.img?'<span class="hint">載入中…</span>':`<span class="fext e-${extOf(a.name).toLowerCase()}">${extOf(a.name)}</span><span class="fkb">${a.kb>=1024?r1(a.kb/1024)+' MB':(a.kb||'<1')+' KB'}</span>`}</div><div class="phcap" title="${esc(a.name)}">${esc(trunc(a.name,18))}</div><button class="phx" data-attdel="${a.id}" title="移除">✕</button></div>`).join('');
+  ps.filter(a=>a.img).forEach(async a=>{const u=await attURL(a);const el=b.querySelector(`[data-view="${a.id}"]`);if(!el)return;
+    el.innerHTML=u?`<img src="${u}" alt="" data-view="${a.id}">`:`<span class="hint">${DH&&fileOK?'找不到檔案':'連結資料夾後顯示'}</span>`})
+}
+function drawAllAtts(){[1,2,3,4,5].forEach(drawAtts)}
+async function openAtt(id){
+  const a=(ST.draft.atts||[]).find(x=>x.id===id);if(!a)return;
+  if(a.img)return viewPhoto(id);
+  const u=await attURL(a);if(!u){toast(DH&&fileOK?'找不到檔案':'請先連結資料夾',true);return}
+  if(/pdf|image|text/i.test(a.mime||'')||/\.(pdf|txt)$/i.test(a.name)){window.open(u,'_blank');return}
+  const l=document.createElement('a');l.href=u;l.download=a.name;l.click()
+}
+async function viewPhoto(id){
+  const ps=(ST.draft.atts||[]).filter(a=>a.img).sort((x,y)=>(x.stage||1)-(y.stage||1));let i=ps.findIndex(p=>p.id===id);if(i<0)return;
+  const lb=document.createElement('div');lb.className='lb';document.body.appendChild(lb);
+  const show=async()=>{const p=ps[i];const u=await attURL(p);
+    lb.innerHTML=`<div class="lbbar"><span>${i+1} / ${ps.length}　【${STG[p.stage||1]}】${esc(p.name)}　${esc(fDT(p.at))}　${p.kb||''} KB</span><span>${u?`<a class="btn sm" href="${u}" download="${esc(p.name)}">下載</a>`:''} <button class="btn sm" data-lb="x">關閉 ✕</button></span></div>
+      ${ps.length>1?'<button class="lbnav l" data-lb="p">‹</button><button class="lbnav r" data-lb="n">›</button>':''}
+      ${u?`<img src="${u}" alt="">`:'<div style="color:#fff">找不到檔案</div>'}`};
+  const close=()=>{lb.remove();document.removeEventListener('keydown',key)};
+  const key=e=>{if(e.key==='Escape')close();if(e.key==='ArrowRight'){i=(i+1)%ps.length;show()}if(e.key==='ArrowLeft'){i=(i-1+ps.length)%ps.length;show()}};
+  lb.onclick=e=>{const a=e.target.dataset.lb;if(a==='x'||e.target===lb)close();if(a==='n'){i=(i+1)%ps.length;show()}if(a==='p'){i=(i-1+ps.length)%ps.length;show()}};
+  document.addEventListener('keydown',key);show()
+}
+async function removeAttFiles(list){if(!fileOK)return;for(const a of list){const d=dirOf(a);if(!d)continue;try{await d.removeEntry(a.f)}catch(e){}photoCache.delete(a.dir+'/'+a.f)}}
+
+
+function download(name,text,type){const b=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function exportJSON(){download(`客戶問題點資料_${today()}.json`,JSON.stringify(DB,null,1),'application/json')}
+let fileMode='replace';
+function importJSON(mode){fileMode=mode||'replace';$('#fileIn').value='';$('#fileIn').click()}
+$('#fileIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
+  if(fileMode==='fam'){const fams=findFamilies(d);if(!fams.length){alert('檔案中找不到機種家族清單');return}const add=fams.filter(x=>!DB.master.families.includes(x));DB.master.families.push(...add);persist();render();toast(`匯入機種家族 ${add.length} 筆（共找到 ${fams.length} 筆）`);return}
+  if(d.app!=='CQ'){alert('這不是本系統的資料檔');return}
+  if(!confirm(`將以檔案內容（${(d.cases||[]).length} 件案件）取代目前資料，確定？`))return;
+  DB=migrate(d);persist();render();toast('匯入完成')}catch(err){alert('讀取失敗：'+err.message)}};
+function findFamilies(obj){const out=new Set();(function walk(o,depth){if(!o||typeof o!=='object'||depth>6)return;for(const[k,v]of Object.entries(o)){if(Array.isArray(v)&&/famil|機種|家族|^models$/i.test(k)){v.forEach(x=>{const n=typeof x==='string'?x:(x&&(x.name||x.zh||x.label));if(n&&String(n).trim())out.add(String(n).trim())})}else if(v&&typeof v==='object')walk(v,depth+1)}})(obj,0);return[...out]}
+
+/* ---------- 導覽 ---------- */
+$('#nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;if(!tabOK(t)){toast('目前身分沒有這個權限',true);return}if(t==='new')newCase();else go(t)};
+$('#btnWho').onclick=()=>whoDialog();
+function leaveOK(){return !(ST.tab==='edit'&&ST.dirty)||confirm('案件有未儲存的變更，確定離開？')}
+function go(tab){if(tab!==ST.tab&&!leaveOK())return;if(tab!=='edit'){ST.draft=null;ST.dirty=false}ST.tab=tab;render();window.scrollTo(0,0)}
+function newCase(){if(!leaveOK())return;if(DH&&fileOK&&!busy)loadFromFile(false,true);ST.draft=blankCase();ST.isNew=true;ST.dirty=false;ST.tab='edit';render();window.scrollTo(0,0)}
+function openCase(id){const c=DB.cases.find(x=>x.id===id);if(!c||!leaveOK())return;ST.draft=structuredClone(c);ST.isNew=false;ST.dirty=false;ST.tab='edit';render();window.scrollTo(0,0)}
+window.addEventListener('beforeunload',e=>{if(ST.tab==='edit'&&ST.dirty){e.preventDefault();e.returnValue=''}});
+function fillLists(){$('#dlPeople').innerHTML=peopleList().map(p=>`<option value="${esc(p)}">`).join('');$('#dlCust').innerHTML=custList().map(c=>`<option value="${esc(c.name)}">`).join('')}
+const CITY=['基隆市','臺北市','新北市','桃園市','新竹市','新竹縣','苗栗縣','臺中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','臺南市','高雄市','屏東縣','宜蘭縣','花蓮縣','臺東縣','澎湖縣','金門縣','連江縣','海外'];
+const custCities=cust=>{const c=custList().find(x=>x.name===cust);return c?String(c.sites||'').split(/[,，、\s]+/).map(s=>s.trim().replace(/^台/,'臺')).filter(Boolean):[]};
+function fillSites(cust){const sel=document.querySelector('[data-f="site"]');if(!sel)return;const v=ST.draft.site||'',mine=custCities(cust),rest=CITY.filter(x=>!mine.includes(x));
+  sel.innerHTML='<option value="">—</option>'+(mine.length?`<optgroup label="此客戶常用">${mine.map(x=>`<option>${esc(x)}</option>`).join('')}</optgroup><optgroup label="全部縣市">`:'')+rest.map(x=>`<option>${esc(x)}</option>`).join('')+(mine.length?'</optgroup>':'')+(v&&!CITY.includes(v)&&!mine.includes(v)?`<option>${esc(v)}</option>`:'');
+  sel.value=v;if(!v&&mine.length===1){sel.value=mine[0];ST.draft.site=mine[0]}}
+function fillContacts(cust){const set=new Set(DB.cases.filter(c=>c.customer===cust&&c.contact).map(c=>c.contact));$('#dlContact').innerHTML=[...set].map(x=>`<option value="${esc(x)}">`).join('')}
+function autofillContact(){const d=ST.draft;if(!d.contact)return;const prev=[...DB.cases].filter(c=>c.id!==d.id&&c.customer===d.customer&&c.contact===d.contact).sort((a,b)=>String(b.receivedAt).localeCompare(a.receivedAt))[0];if(!prev)return;
+  let n=0;['contactDept','contactTitle','mobile','tel','ext','email'].forEach(k=>{if(!d[k]&&prev[k]){d[k]=prev[k];const i=document.querySelector(`[data-f="${k}"]`);if(i)i.value=prev[k];n++}});if(n)toast('已帶入上次的聯絡資料')}
+function fmtMobile(v){const x=String(v).replace(/\D/g,'');return /^09\d{8}$/.test(x)?`${x.slice(0,4)}-${x.slice(4,7)}-${x.slice(7)}`:v}
+const okEmail=v=>!v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+/* ---------- 日期時間輸入 ---------- */
+function parseD(s){s=String(s).trim().replace(/[年月\.\-．]/g,'/').replace(/日/g,'');if(!s)return'';let y,m,d;
+  if(/^\d{8}$/.test(s)){y=+s.slice(0,4);m=+s.slice(4,6);d=+s.slice(6)}
+  else if(/^\d{3,4}$/.test(s)){m=+s.slice(0,-2);d=+s.slice(-2)}
+  else if(/^\d{1,2}$/.test(s)){m=new Date().getMonth()+1;d=+s}
+  else{const p=s.split('/').filter(Boolean).map(Number);if(p.length===3){[y,m,d]=p;if(y<100)y+=2000;else if(y<300)y+=1911}else if(p.length===2)[m,d]=p;else return null}
+  if(!y){const t=new Date();y=t.getFullYear();if(new Date(y,m-1,d)-t>45*864e5)y--}
+  const x=new Date(y,m-1,d);if(isNaN(x)||x.getMonth()!==m-1||x.getDate()!==d)return null;return`${y}-${pad(m)}-${pad(d)}`}
+function parseT(s){s=String(s).trim().replace(/：/g,':');if(!s)return'';const pm=/下午|晚上|pm/i.test(s);s=s.replace(/上午|下午|早上|晚上|am|pm|\s|點/ig,m=>m==='點'?':':'').replace(/:$/,'');let h,mi;
+  if(/^\d{1,2}$/.test(s)){h=+s;mi=0}else if(/^\d{3,4}$/.test(s)){h=+s.slice(0,-2);mi=+s.slice(-2)}else{const p=s.split(':');if(p.length!==2)return null;h=+p[0];mi=+(p[1]||0)}
+  if(pm&&h<12)h+=12;if(isNaN(h)||isNaN(mi)||h>23||mi>59)return null;return pad(h)+':'+pad(mi)}
+const WK='日一二三四五六';
+function nice(v){const d=P(v);if(!d)return'';return`${pad(d.getMonth()+1)}/${pad(d.getDate())}（${WK[d.getDay()]}）${v.length>10?' '+v.slice(11,16):''}`}
+
+function render(){
+  $('#ver').textContent=VER;paintWho();
+  document.querySelectorAll('#nav button').forEach(b=>b.style.display=tabOK(b.dataset.t)?'':'none');
+  if(!tabOK(ST.tab)||(ST.tab==='edit'&&ST.isNew&&!can('case.new')))ST.tab='dash';
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===ST.tab||(b.dataset.t==='new'&&ST.tab==='edit'&&ST.isNew)));
+  fillLists();
+  const mn=$('#main');mn.oninput=mn.onchange=mn.onclick=mn.onpaste=mn.ondrop=mn.ondragover=null;
+  ({dash:rDash,list:rList,edit:rEdit,rpt:rRpt,set:rSet})[ST.tab]($('#main'))
+}
+
+/* ---------- 共用元件 ---------- */
+const chip=k=>{const s=stOf(k);return`<span class="chip st-${s.k}">${s.zh}</span>`};
+const sevB=c=>`<span class="sev s${esc(c)}">${esc(c)}</span>`;
+function countBy(arr,fn){const m=new Map();arr.forEach(x=>{const k=fn(x)||'（未填）';m.set(k,(m.get(k)||0)+1)});return[...m].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value)}
+function hbars(items,color='var(--acc)',max=10){
+  if(!items.length)return'<div class="empty">無資料</div>';
+  items=items.slice(0,max);const W=560,lw=150,rh=26,H=items.length*rh+8,mx=Math.max(...items.map(i=>i.value));
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}">${items.map((it,i)=>{const w=Math.max(2,(W-lw-50)*it.value/mx),y=i*rh+4;
+    return`<text x="${lw-8}" y="${y+16}" text-anchor="end" font-size="12" fill="#1d2733">${esc(trunc(it.label,18))}</text><rect x="${lw}" y="${y+3}" width="${w}" height="${rh-9}" rx="3" fill="${color}"/><text x="${lw+w+6}" y="${y+16}" font-size="12" fill="#1d2733" font-weight="700">${it.value}</text>`}).join('')}</svg>`
+}
+const trunc=(s,n)=>{s=String(s);return s.length>n?s.slice(0,n-1)+'…':s};
+function pareto(items,cumLabel){
+  if(!items.length)return'<div class="empty">無資料</div>';
+  const W=640,H=270,l=36,r=40,t=14,b=78,n=items.length,tot=items.reduce((a,i)=>a+i.value,0),mx=items[0].value,bw=(W-l-r)/n;
+  let cum=0,pts=[],bars='';
+  items.forEach((it,i)=>{const h=(H-t-b)*it.value/mx,x=l+i*bw;cum+=it.value;const cy=t+(H-t-b)*(1-cum/tot);pts.push(`${x+bw/2},${cy}`);
+    bars+=`<rect x="${x+bw*.15}" y="${H-b-h}" width="${bw*.7}" height="${h}" fill="var(--acc)" rx="2"/><text x="${x+bw/2}" y="${H-b-h-4}" text-anchor="middle" font-size="11" font-weight="700" fill="#1d2733">${it.value}</text><text transform="translate(${x+bw/2},${H-b+12}) rotate(-35)" text-anchor="end" font-size="11" fill="#1d2733">${esc(trunc(it.label,10))}</text>`});
+  const grid=[0,50,80,100].map(p=>{const y=t+(H-t-b)*(1-p/100);return`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="${p===80?'#f0b3b3':'#edf0f4'}" ${p===80?'stroke-dasharray="4 3"':''}/><text x="${W-r+4}" y="${y+4}" font-size="10" fill="#5f6b7a">${p}%</text>`}).join('');
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}">${grid}${bars}<polyline points="${pts.join(' ')}" fill="none" stroke="#d93a3a" stroke-width="2"/>${pts.map(p=>`<circle cx="${p.split(',')[0]}" cy="${p.split(',')[1]}" r="3" fill="#d93a3a"/>`).join('')}<text x="${W-r}" y="${t-2}" text-anchor="end" font-size="10" fill="#d93a3a">${esc(cumLabel)}</text></svg>`
+}
+function trend(labels,a,bv,la,lb){
+  const W=560,H=230,l=30,t=24,b=30,n=labels.length,mx=Math.max(1,...a,...bv),gw=(W-l-10)/n,bw=gw*.32;
+  let s=`<text x="${l}" y="14" font-size="11" fill="#1f6feb">■ ${esc(la)}</text><text x="${l+110}" y="14" font-size="11" fill="#1f9d55">■ ${esc(lb)}</text>`;
+  labels.forEach((lab,i)=>{const x=l+i*gw+gw*.18;[[a[i],'#1f6feb',0],[bv[i],'#1f9d55',1]].forEach(([v,c,k])=>{const h=(H-t-b)*v/mx,xx=x+k*(bw+2);s+=`<rect x="${xx}" y="${H-b-h}" width="${bw}" height="${h}" fill="${c}" rx="2"/><text x="${xx+bw/2}" y="${H-b-h-3}" text-anchor="middle" font-size="10" fill="#1d2733">${v}</text>`});
+    s+=`<text x="${l+i*gw+gw/2}" y="${H-b+16}" text-anchor="middle" font-size="11" fill="#5f6b7a">${lab}</text>`});
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${l}" x2="${W-10}" y1="${H-b}" y2="${H-b}" stroke="#d9dee6"/>${s}</svg>`
+}
+function monthsBack(ymS,n){const[y,m]=ymS.split('-').map(Number);const out=[];for(let i=n-1;i>=0;i--){const d=new Date(y,m-1-i,1);out.push(ym(d))}return out}
+
+/* ---------- 統計 ---------- */
+function stats(ymS){
+  const cs=DB.cases.filter(c=>c.status!=='cancel');const inM=s=>s&&s.slice(0,7)===ymS;
+  const[y,m]=ymS.split('-').map(Number);const end=new Date(y,m,0,23,59,59);
+  const recv=cs.filter(c=>inM(c.receivedAt)),closed=cs.filter(c=>c.status==='closed'&&inM(c.closedAt));
+  const openEnd=cs.filter(c=>P(c.receivedAt)<=end&&!(c.status==='closed'&&c.closedAt&&P(c.closedAt)<=end));
+  const rs=recv.map(respState),judged=rs.filter(s=>s==='ok'||s==='late'||s==='over').length,ok=rs.filter(s=>s==='ok').length;
+  const as=recv.map(actState),aj=as.filter(s=>s==='ok'||s==='late'||s==='over').length,aok=as.filter(s=>s==='ok').length;
+  const rh=recv.map(respHrs).filter(v=>v!=null);const cd=closed.map(c=>(P(c.closedAt)-P(c.receivedAt))/864e5);
+  return{recv,closed,openEnd,respRate:judged?ok/judged*100:null,judged,actRate:aj?aok/aj*100:null,aj,avgResp:rh.length?rh.reduce((a,b)=>a+b,0)/rh.length:null,avgClose:cd.length?cd.reduce((a,b)=>a+b,0)/cd.length:null}
+}
+
+/* ---------- 儀表板 ---------- */
+function rDash(el){
+  const cs=DB.cases,open=cs.filter(isOpen),od=open.filter(overdue),aOpen=open.filter(c=>c.severity==='A'),s=stats(ym(new Date()));
+  const att=open.filter(c=>overdue(c)||c.severity==='A'||respState(c)==='pending').sort((a,b)=>(overdue(b)-overdue(a))||String(a.receivedAt).localeCompare(b.receivedAt));
+  const ms=monthsBack(ym(new Date()),6),st6=ms.map(stats);
+  el.innerHTML=`
+  <div class="kpis">
+    <div class="kpi"><div class="l">進行中案件</div><div class="v">${open.length}</div><div class="s">新案 ${open.filter(c=>c.status==='new').length}／處理中 ${open.filter(c=>c.status==='wip').length}／待確認 ${open.filter(c=>c.status==='confirm').length}</div></div>
+    <div class="kpi ${od.length?'red':'grn'}"><div class="l">逾期案件</div><div class="v">${od.length}</div><div class="s">回應或對策超過期限</div></div>
+    <div class="kpi ${aOpen.length?'red':''}"><div class="l">A 級未結案</div><div class="v">${aOpen.length}</div><div class="s">停機等級</div></div>
+    <div class="kpi"><div class="l">本月新增</div><div class="v">${s.recv.length}</div><div class="s">${ym(new Date())}</div></div>
+    <div class="kpi grn"><div class="l">本月結案</div><div class="v">${s.closed.length}</div><div class="s">平均結案 ${s.avgClose==null?'—':r1(s.avgClose)+' 天'}</div></div>
+    <div class="kpi amb"><div class="l">本月回應達成率</div><div class="v">${s.respRate==null?'—':Math.round(s.respRate)+'%'}</div><div class="s">已判定 ${s.judged} 件</div></div>
+  </div>
+  <div class="card"><h3>⚠ 需要注意（逾期／A 級／待首次回應）</h3>${att.length?caseTable(att,true):'<div class="empty">目前沒有需要注意的案件 👍</div>'}</div>
+  <div class="g2">
+    <div class="card"><h3>進行中依負責人</h3>${hbars(countBy(open,c=>c.owner),'#2b3d52')}</div>
+    <div class="card"><h3>近 6 個月新增／結案</h3>${trend(ms.map(x=>x.slice(5)+'月'),st6.map(x=>x.recv.length),st6.map(x=>x.closed.length),'新增','結案')}</div>
+  </div>`;
+  el.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>openCase(tr.dataset.id));
+}
+function caseTable(arr,compact){
+  return`<div class="wrapT"><table class="tbl"><thead><tr><th>案號</th><th>受理時間</th><th>急迫</th><th>狀態</th><th>客戶／縣市</th><th>機種／型號</th><th>問題描述</th><th>負責人</th><th>首次回應</th><th>對策</th><th>天數</th></tr></thead><tbody>${arr.map(c=>`
+  <tr class="click ${overdue(c)?'od':''}" data-id="${c.id}"><td><b>${esc(c.no)}</b></td><td>${esc(fDT(c.receivedAt))}</td><td>${sevB(c.severity)}</td><td>${chip(c.status)}</td><td>${esc(c.customer)}${c.site?'<br><span class="hint">'+esc(c.site)+'</span>':''}</td><td>${esc(c.family)}${c.model?'<br><span class="hint">'+esc(c.model)+'</span>':''}</td><td>${esc(trunc(c.desc,compact?30:45))}${(c.atts||[]).length?` <span class="hint">📎${c.atts.length}</span>`:''}</td><td>${esc(c.owner)}</td><td>${stateTag(respState(c),dueResp(c))}</td><td>${stateTag(actState(c),dueAct(c))}</td><td>${r1(ageDays(c))}</td></tr>`).join('')}</tbody></table></div>`
+}
+
+/* ---------- 案件清單 ---------- */
+function filtered(){const f=ST.f,q=f.q.trim().toLowerCase();return DB.cases.filter(c=>{
+  if(f.status==='open'&&!isOpen(c))return false;if(f.status==='od'&&!overdue(c))return false;if(f.status&&!['open','od'].includes(f.status)&&c.status!==f.status)return false;
+  if(f.sev&&c.severity!==f.sev)return false;if(f.cust&&c.customer!==f.cust)return false;if(f.fam&&c.family!==f.fam)return false;if(f.owner&&c.owner!==f.owner)return false;
+  const d=fD(c.receivedAt);if(f.from&&d<f.from)return false;if(f.to&&d>f.to)return false;
+  if(q&&!['no','customer','site','model','serial','desc','woNo','contact','contactDept','mobile','tel','email','owner','category'].some(k=>String(c[k]||'').toLowerCase().includes(q)))return false;return true}).sort((a,b)=>String(b.receivedAt).localeCompare(a.receivedAt))}
+function rList(el){
+  const f=ST.f,m=DB.master,uniq=k=>[...new Set(DB.cases.map(c=>c[k]).filter(Boolean))].sort();
+  const opt=(arr,v)=>`<option value="">全部</option>`+arr.map(x=>`<option ${x===v?'selected':''} value="${esc(x)}">${esc(x)}</option>`).join('');
+  el.innerHTML=`<div class="card"><div class="filters">
+    <label class="fld"><span>狀態</span><select data-ff="status"><option value="">全部</option><option value="open">未結案</option><option value="od">逾期</option>${STATUS.map(s=>`<option value="${s.k}">${s.zh}</option>`).join('')}</select></label>
+    <label class="fld"><span>急迫度</span><select data-ff="sev">${opt(m.severities.map(s=>s.code),f.sev)}</select></label>
+    <label class="fld"><span>客戶</span><select data-ff="cust">${opt(uniq('customer'),f.cust)}</select></label>
+    <label class="fld"><span>機種（與報工系統相同）</span><select data-ff="fam">${opt(uniq('family'),f.fam)}</select></label>
+    <label class="fld"><span>負責人</span><select data-ff="owner">${opt(uniq('owner'),f.owner)}</select></label>
+    <label class="fld"><span>受理日 起</span><input type="date" data-ff="from" value="${f.from}"></label>
+    <label class="fld"><span>受理日 迄</span><input type="date" data-ff="to" value="${f.to}"></label>
+    <label class="fld" style="flex:1;min-width:180px"><span>關鍵字（案號、型號、序號、描述…）</span><input data-ff="q" value="${esc(f.q)}"></label>
+    <button class="btn" id="fclr">清除條件</button><button class="btn" id="csv">匯出 CSV</button>
+  </div><div id="lt"></div></div>`;
+  el.querySelector('[data-ff=status]').value=f.status;
+  const draw=()=>{const arr=filtered();$('#lt').innerHTML=`<div class="hint" style="margin-bottom:6px">共 ${arr.length} 件</div>`+(arr.length?caseTable(arr):'<div class="empty">沒有符合條件的案件</div>');$('#lt').querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>openCase(tr.dataset.id))};
+  el.querySelectorAll('[data-ff]').forEach(i=>i.oninput=()=>{ST.f[i.dataset.ff]=i.value;draw()});
+  $('#fclr').onclick=()=>{ST.f={status:'',sev:'',cust:'',fam:'',owner:'',from:'',to:'',q:''};rList(el)};
+  $('#csv').onclick=()=>exportCSV(filtered());draw()
+}
+function exportCSV(arr){
+  const cols=[['no','案號'],['status','狀態'],['receivedAt','受理時間'],['source','來源'],['receiver','受理人'],['customer','客戶'],['site','縣市'],['contact','聯絡人'],['contactDept','單位'],['contactTitle','職位'],['mobile','手機'],['tel','市話'],['ext','分機'],['email','Email'],['family','機種家族'],['model','型號'],['serial','序號'],['woNo','報工工單號'],['severity','急迫度'],['owner','負責人'],['desc','問題描述'],['firstRespAt','首次回應'],['category','問題分類'],['handle','處置方式'],['measureAt','對策提出日'],['phenomenon','現象確認'],['containment','暫時對策'],['result','處置結果'],['custConfirmAt','客戶確認日'],['closedAt','結案時間'],['costType','費用歸屬'],['rootCause','根本原因'],['permanent','永久對策']];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[cols.map(c=>c[1]).concat(['回應時效','對策時效','天數']).map(q).join(',')].concat(arr.map(c=>cols.map(([k])=>k==='status'?stOf(c.status).zh:c[k]).concat([respState(c),actState(c),r1(ageDays(c))]).map(q).join(',')));
+  download(`客戶問題點清單_${today()}.csv`,'\ufeff'+rows.join('\r\n'),'text/csv')
+}
+
+/* ---------- 案件編輯 ---------- */
+const gv=p=>p==='_tl'?(ST.tlAt||''):p.split('.').reduce((o,k)=>o?o[k]:undefined,ST.draft)??'';
+function sv(p,v){if(p==='_tl'){ST.tlAt=v;return}const ks=p.split('.');let o=ST.draft;ks.slice(0,-1).forEach(k=>{o[k]=o[k]||{};o=o[k]});o[ks[ks.length-1]]=v}
+const F={
+  dt:(p,l,o={})=>{const v=gv(p),dOnly=!!o.d,d=v?v.slice(0,10).replace(/-/g,'/'):'',t=v&&v.length>10?v.slice(11,16):'';
+    return`<div class="fld ${o.c||''}"><span class="${o.req?'req':''}">${l}</span><div class="dtw" data-dtw="${p}" data-donly="${dOnly?1:''}"><input class="dtd" value="${esc(d)}" placeholder="${dOnly?'例 10/8 或 1008':'日期 10/8'}" data-dtpart="d" autocomplete="off"><button type="button" class="dtcal" data-dtcal="${p}" title="從月曆選">📅</button>${dOnly?'':`<input class="dtt" value="${esc(t)}" placeholder="時間 1430" data-dtpart="t" autocomplete="off">`}<input type="date" class="dtnat" tabindex="-1" data-dtnat="${p}"></div>
+    <div class="dtq"><button type="button" data-dq="now" data-dqp="${p}">${dOnly?'今天':'現在'}</button><button type="button" data-dq="yday" data-dqp="${p}">昨天</button><button type="button" data-dq="clr" data-dqp="${p}">清除</button><span class="dtok" data-dtok="${p}"></span></div></div>`},
+  inp:(p,l,o={})=>`<label class="fld ${o.c||''}"><span class="${o.req?'req':''}">${l}</span>${o.now?'<span class="inl">':''}<input type="${o.t||'text'}" data-f="${p}" value="${esc(gv(p))}" ${o.list?`list="${o.list}"`:''} ${o.ro?'readonly':''} placeholder="${esc(o.ph||'')}">${o.now?`<button class="btn sm" data-now="${p}" type="button">現在</button></span>`:''}</label>`,
+  sel:(p,l,opts,o={})=>{const v=gv(p);const has=opts.some(x=>x.v===v);return`<label class="fld ${o.c||''}"><span class="${o.req?'req':''}">${l}</span><select data-f="${p}"><option value="">—</option>${opts.map(x=>`<option value="${esc(x.v)}" ${x.v===v?'selected':''}>${esc(x.t)}</option>`).join('')}${v&&!has?`<option selected value="${esc(v)}">${esc(v)}（已不在主檔）</option>`:''}</select></label>`},
+  ta:(p,l,o={})=>`<label class="fld ${o.c||'full'}"><span class="${o.req?'req':''}">${l}</span><textarea data-f="${p}" rows="${o.r||3}" placeholder="${esc(o.ph||'')}">${esc(gv(p))}</textarea></label>`
+};
+function rEdit(el){
+  const c=ST.draft;if(!c){go('list');return}
+  ST.tlAt=nowL();
+  const m=DB.master,zl=a=>a.map(x=>({v:x.zh,t:x.zh})),sl=a=>a.map(x=>({v:x,t:x}));
+  const order=['new','wip','confirm','closed'],ci=order.indexOf(c.status);
+  const btns=[];
+  if(c.status==='new')btns.push(['wip','開始調查 →','pri']);
+  if(c.status==='wip'){btns.push(['confirm','送客戶確認 →','pri']);btns.push(['closed','直接結案','ok'])}
+  if(c.status==='confirm'){btns.push(['wip','← 退回處理中','']);btns.push(['closed','結案','ok'])}
+  if(c.status==='closed'||c.status==='cancel')btns.push(['wip','重新開啟','']);
+  if(isOpen(c))btns.push(['cancel','取消案件','danger']);
+  el.innerHTML=`
+  <div class="actbar">
+    <button class="btn" id="eBack">← 清單</button>
+    <span class="ttl">${c.no?esc(c.no):'新案件'}</span>${chip(c.status)}${sevB(c.severity)}
+    <span style="flex:1"></span>
+    <span class="hint" id="dirtyH">${ST.dirty?'● 未儲存':''}</span>
+    ${btns.map(b=>`<button class="btn ${b[2]}" data-st="${b[0]}">${b[1]}</button>`).join('')}
+    <button class="btn pri" id="eSave">💾 儲存</button>
+    ${ST.isNew?'':'<button class="btn danger" id="eDel">刪除</button>'}
+  </div>
+  <div class="steps ${c.status==='cancel'?'cancel':''}">${order.map((k,i)=>`<div class="${i<ci?'done':i===ci?'cur':''}">${i+1}. ${stOf(k).zh}</div>`).join('')}</div>
+
+  <div class="card" data-stage="1"><h3><span class="no">1</span>受理資訊</h3>
+    <div class="grid">
+      ${F.inp('no','案號',{ro:1,ph:'儲存後自動編號'})}
+      ${F.dt('receivedAt','受理時間',{req:1})}
+      ${F.sel('source','來源管道',zl(m.sources),{req:1})}
+      ${F.inp('receiver','受理人',{list:'dlPeople'})}
+      ${F.inp('customer','客戶',{list:'dlCust',req:1})}
+      <label class="fld"><span>縣市</span><select data-f="site"></select></label>
+      ${F.inp('contact','客戶聯絡人',{list:'dlContact',ph:'輸入用過的姓名會帶出聯絡資料'})}
+      ${F.inp('contactDept','單位',{ph:'例：設備課、廠務部'})}
+      ${F.inp('contactTitle','職位',{ph:'例：課長、工程師'})}
+      ${F.inp('mobile','手機',{t:'tel',ph:'0912-345-678'})}
+      <div class="fld"><span>市話／分機</span><div class="inl"><input type="tel" data-f="tel" value="${esc(gv('tel'))}" placeholder="03-1234567" style="flex:2"><input data-f="ext" value="${esc(gv('ext'))}" placeholder="分機" style="flex:1;min-width:60px"></div></div>
+      ${F.inp('email','Email',{t:'email',ph:'name@company.com'})}
+      <div class="fld full"><span>機種（點選，再點一次取消）</span><div class="chips" id="famChips">${famChips()}</div></div>
+      ${F.inp('model','型號',{list:'dlModel',ph:'直接輸入；選了機種會提示用過的型號'})}
+      ${F.inp('serial','序號')}
+      ${F.inp('woNo','報工工單號',{ph:'選填，連結報工系統'})}
+      ${F.sel('severity','急迫度',m.severities.map(s=>({v:s.code,t:`${s.code} ${s.zh}`})),{req:1})}
+      ${F.inp('owner','負責人',{list:'dlPeople'})}
+      <div class="fld w2"><span>時效期限（依急迫度主檔）</span><div class="due" id="dueBox"></div></div>
+      ${F.ta('desc','問題描述（客戶反映內容）',{req:1,r:4})}
+      ${F.ta('attach','附件／連結（每行一筆：SharePoint 路徑、Mail 主旨、照片位置…）',{r:2})}
+      <div class="fld full links" id="linkBox"></div>
+      <div class="fld full"><span>📎 附件（受理：客戶來信、照片、報價單…）</span>${attBox(1)}</div>
+    </div>
+  </div>
+
+  <div class="card" data-stage="2"><h3><span class="no">2</span>初步調查</h3>
+    <div class="grid">
+      ${F.dt('firstRespAt','首次回應時間')}
+      ${F.sel('category','問題分類',zl(m.categories))}
+      ${F.sel('handle','處置方式',sl(HANDLE))}
+      ${F.dt('measureAt','對策提出日',{d:1})}
+      ${F.ta('phenomenon','現象確認（實際狀況、數據、照片說明）',{c:'w2'})}
+      ${F.ta('containment','暫時對策／圍堵',{c:'w2'})}
+    </div>
+    ${attSec(2)}
+  </div>
+
+  <div class="card" data-stage="3"><h3><span class="no">3</span>處置與客戶確認</h3>
+    <div class="grid">
+      ${F.ta('result','處置結果',{c:'w2'})}
+      ${F.ta('custReply','客戶回覆',{c:'w2'})}
+      ${F.dt('custConfirmAt','客戶確認日',{d:1})}
+    </div>
+    ${attSec(3)}
+  </div>
+
+  <div class="card" data-stage="4"><h3><span class="no">4</span>結案</h3>
+    <div class="grid">
+      ${F.dt('closedAt','結案時間')}
+      ${F.sel('costType','費用歸屬',zl(m.costTypes))}
+      <div></div><div></div>
+      ${F.ta('rootCause','根本原因',{c:'w2'})}
+      ${F.ta('permanent','永久對策',{c:'w2'})}
+    </div>
+    <label style="display:flex;gap:6px;align-items:center;margin-top:4px;cursor:pointer"><input type="checkbox" data-f="d8.on" ${c.d8&&c.d8.on?'checked':''}> <b>重大案件：展開 8D 報告欄位</b></label>
+    <div id="d8body" style="display:${c.d8&&c.d8.on?'block':'none'};margin-top:10px;border-top:1px dashed var(--line);padding-top:10px">
+      <div class="hint" style="margin-bottom:8px">8D 對應：D2 問題描述＝受理的問題描述｜D3 暫時對策＝第 2 段｜D4 根本原因、D5 永久對策＝本段上方</div>
+      <div class="grid">
+        ${F.ta('d8.team','D1 團隊成員',{c:'w2',r:2})}
+        ${F.ta('d8.verify','D6 對策有效性驗證',{c:'w2',r:2})}
+        ${F.ta('d8.prevent','D7 再發防止（標準化、SOP、保養週期…）',{c:'w2',r:2})}
+        ${F.ta('d8.horizontal','D7 水平展開（同機種／同客戶／其他廠區）',{c:'w2',r:2})}
+        ${F.ta('d8.lesson','D8 結論與經驗分享',{r:2})}
+      </div>
+    </div>
+    ${attSec(4)}
+  </div>
+
+  <div class="card" data-stage="5"><h3><span class="no">5</span>處理歷程</h3>
+    <div class="grid">
+      ${F.dt('_tl','時間')}
+      <label class="fld"><span>人員</span><input id="tlBy" list="dlPeople" value="${esc(c.owner||'')}"></label>
+      <label class="fld"><span>類型</span><select id="tlType">${TLTYPE.map(t=>`<option>${t}</option>`).join('')}</select></label>
+      <div class="fld"><span>&nbsp;</span><button class="btn pri" id="tlAdd" type="button">＋ 加入歷程</button></div>
+      <label class="fld full"><span>內容</span><textarea id="tlText" rows="2" placeholder="例：電話回覆客戶，約定明日 10:00 到場"></textarea></label>
+    </div>
+    ${attSec(5)}
+    <div class="tl" id="tlBox" style="margin-top:12px"></div>
+  </div>`;
+  ST.tlAt=nowL();fillSites(c.customer);fillContacts(c.customer);fillModels();el.querySelectorAll('[data-dtw]').forEach(w=>commitDT(w,true));updDue();updLinks();drawTL();drawAllAtts();
+  el.onfocusin=el.onmousedown=e=>{const c=e.target.closest&&e.target.closest('[data-stage]');if(c)ST.lastStage=+c.dataset.stage};
+  el.onpaste=e=>{const fs=[...(e.clipboardData||{}).items||[]].filter(i=>i.kind==='file').map(i=>i.getAsFile());if(fs.length){e.preventDefault();const c=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('[data-stage]');addAtts(fs,c?+c.dataset.stage:(ST.lastStage||1))}};
+  el.ondragover=e=>{if([...e.dataTransfer.types].includes('Files')){e.preventDefault();document.querySelectorAll('[data-stdrop].over').forEach(x=>x.classList.remove('over'));const z=e.target.closest('[data-stdrop]')||(e.target.closest('[data-stage]')||{}).querySelector?.('[data-stdrop]');if(z)z.classList.add('over')}};
+  el.ondragleave=e=>{if(!el.contains(e.relatedTarget))document.querySelectorAll('[data-stdrop].over').forEach(x=>x.classList.remove('over'))};
+  el.ondrop=e=>{if(e.dataTransfer.files.length){e.preventDefault();document.querySelectorAll('[data-stdrop].over').forEach(x=>x.classList.remove('over'));const z=e.target.closest('[data-stdrop]'),c=e.target.closest('[data-stage]');addAtts(e.dataTransfer.files,z?+z.dataset.stdrop:c?+c.dataset.stage:1)}};
+  el.oninput=el.onchange=e=>{const t=e.target;
+    if(t.dataset.attin){if(e.type==='change'){addAtts(t.files,+t.dataset.attin);t.value=''}return}
+    if(t.dataset.dtpart){commitDT(t.closest('[data-dtw]'),e.type==='change');return}
+    if(t.dataset.dtnat){const w=t.closest('[data-dtw]');if(t.value){w.querySelector('.dtd').value=t.value.replace(/-/g,'/');commitDT(w,true);const ti=w.querySelector('.dtt');if(ti&&!ti.value)ti.focus()}return}
+    const p=t.dataset.f;if(!p)return;
+    if(e.type==='change'&&p==='mobile'){t.value=fmtMobile(t.value)}
+    if(p==='email')t.classList.toggle('invalid',!okEmail(t.value.trim()));sv(p,t.type==='checkbox'?t.checked:t.value);markDirty();
+    if(p==='customer'){fillSites(t.value);fillContacts(t.value)}if(p==='contact'&&e.type==='change')autofillContact();if(p==='receivedAt'||p==='severity'||p==='firstRespAt'||p==='measureAt')updDue();if(p==='attach')updLinks();if(p==='d8.on')$('#d8body').style.display=t.checked?'block':'none'};
+  el.onclick=e=>{const t=e.target;
+    if(t.dataset.dq){const w=el.querySelector(`[data-dtw="${t.dataset.dqp}"]`),di=w.querySelector('.dtd'),ti=w.querySelector('.dtt');
+      if(t.dataset.dq==='now'){di.value=today().replace(/-/g,'/');if(ti)ti.value=nowL().slice(11)}
+      if(t.dataset.dq==='yday'){const y=new Date();y.setDate(y.getDate()-1);di.value=toLocal(y).slice(0,10).replace(/-/g,'/');if(ti&&!ti.value)ti.focus()}
+      if(t.dataset.dq==='clr'){di.value='';if(ti)ti.value=''}
+      commitDT(w,true)}
+    if(t.dataset.dtcal){const n=el.querySelector(`[data-dtnat="${t.dataset.dtcal}"]`);const cur=parseD(n.closest('[data-dtw]').querySelector('.dtd').value);n.value=cur||today();try{n.showPicker()}catch(_){n.focus();n.click()}}
+    if(t.dataset.st)changeStatus(t.dataset.st);
+    if(t.dataset.fam!==undefined){ST.draft.family=ST.draft.family===t.dataset.fam?'':t.dataset.fam;markDirty();$('#famChips').innerHTML=famChips();fillModels()}
+    const vw=t.closest&&t.closest('[data-view]');if(vw&&!t.dataset.attdel)openAtt(vw.dataset.view);
+    if(t.dataset.attdel){const a=ST.draft.atts.find(x=>x.id===t.dataset.attdel);if(a&&confirm(`移除「${a.name}」？（儲存後才會刪除檔案）`)){ST.draft.atts=ST.draft.atts.filter(x=>x.id!==a.id);markDirty();drawAtts(a.stage||1)}}
+    if(t.dataset.tldel){if(confirm('刪除這筆歷程？')){ST.draft.timeline=ST.draft.timeline.filter(x=>x.id!==t.dataset.tldel);markDirty();drawTL()}}
+  };
+  $('#eBack').onclick=()=>go('list');$('#eSave').onclick=()=>saveCase();
+  if($('#eDel'))$('#eDel').onclick=()=>{if(!need('case.del'))return;if(!confirm(`確定刪除案件 ${c.no}？此動作無法復原。`))return;const gone=DB.cases.find(x=>x.id===c.id);if(gone)removeAttFiles(gone.atts||[]);DB.cases=DB.cases.filter(x=>x.id!==c.id);persist();ST.dirty=false;toast('已刪除');go('list')};
+  $('#tlAdd').onclick=()=>{const text=$('#tlText').value.trim();if(!text){toast('請輸入歷程內容',true);return}
+    ST.draft.timeline.push({id:uid(),at:ST.tlAt||nowL(),by:$('#tlBy').value.trim(),type:$('#tlType').value,text});$('#tlText').value='';ST.tlAt=nowL();const tw=document.querySelector('[data-dtw="_tl"]');tw.querySelector('.dtd').value=today().replace(/-/g,'/');tw.querySelector('.dtt').value=ST.tlAt.slice(11);commitDT(tw,true);markDirty();drawTL()};
+  applyEditPerm(el,c);
+}
+function applyEditPerm(el,c){
+  const edit=ST.isNew?can('case.new'):can('case.edit');
+  el.querySelectorAll('.actbar [data-st]').forEach(b=>{const t=b.dataset.st;const cl=t==='closed'||t==='cancel'||c.status==='closed'||c.status==='cancel';if(!edit||(cl&&!can('case.close')))b.remove()});
+  if(!can('case.del')){const d=el.querySelector('#eDel');if(d)d.remove()}
+  if(edit)return;
+  el.querySelectorAll('input,textarea,select').forEach(x=>x.disabled=true);
+  el.querySelectorAll('button').forEach(b=>{if(b.id==='eBack'||b.closest('[data-view]'))return;if(b.dataset.fam!==undefined){b.disabled=true;return}b.style.display='none'});
+  el.querySelectorAll('[data-tldel],[data-attdel]').forEach(b=>b.style.display='none');
+  const bar=el.querySelector('.actbar');if(bar)bar.insertAdjacentHTML('afterend','<div class="lockbox">👀 目前身分只能查看這件案件。要修改請按右上角切換身分。</div>');
+}
+function commitDT(w,normalize){
+  const p=w.dataset.dtw,dOnly=!!w.dataset.donly,di=w.querySelector('.dtd'),ti=w.querySelector('.dtt'),ok=document.querySelector(`[data-dtok="${p}"]`);
+  const d=parseD(di.value),t=dOnly?'':parseT(ti.value);
+  const bad=m=>{ok.innerHTML=`<span class="dtbad">✗ ${m}</span>`;w.classList.add('bad')};w.classList.remove('bad');
+  if(d===null)return bad('日期看不懂，例：10/8、1008、2026/10/8');
+  if(!dOnly&&t===null)return bad('時間看不懂，例：1430、14:30、下午2');
+  let val='',note='';
+  if(d){let tt=t;if(!dOnly&&!tt){tt=d===today()?nowL().slice(11):'08:30';note=`未填時間，以 ${tt} 計`}val=dOnly?d:d+'T'+tt}
+  else if(t)return bad('請填日期');
+  if(val!==gv(p)){sv(p,val);if(p!=='_tl')markDirty();if(['receivedAt','firstRespAt','measureAt'].includes(p))updDue()}
+  if(normalize){di.value=d?d.replace(/-/g,'/'):'';if(ti&&t)ti.value=t}
+  if(!val){ok.innerHTML='';return}
+  const fut=P(val)-new Date()>864e5;
+  ok.innerHTML=`<span class="dtgood">✓ ${nice(val)}</span>${note?` <span class="hint">${note}</span>`:''}${fut?' <span class="dtbad">⚠ 未來日期</span>':''}`;
+  if(p==='receivedAt'||p==='firstRespAt'||p==='closedAt'){const r=P(ST.draft.receivedAt);if(p!=='receivedAt'&&r&&P(val)<r)ok.innerHTML+=' <span class="dtbad">⚠ 早於受理時間</span>'}
+}
+function famChips(){const m=famList(),v=ST.draft.family;return m.map(x=>`<button type="button" class="fchip ${x===v?'on':''}" data-fam="${esc(x)}">${esc(x)}</button>`).join('')+(v&&!m.includes(v)?`<button type="button" class="fchip on" data-fam="${esc(v)}">${esc(v)}（已不在主檔）</button>`:'')}
+function fillModels(){const fam=ST.draft.family;const set=new Set([...shModels(fam),...DB.cases.filter(c=>!fam||c.family===fam).map(c=>c.model).filter(Boolean)]);$('#dlModel').innerHTML=[...set].sort().map(x=>`<option value="${esc(x)}">`).join('')}
+function markDirty(){ST.dirty=true;const h=$('#dirtyH');if(h)h.textContent='● 未儲存'}
+function updDue(){const c=ST.draft,b=$('#dueBox');if(!b)return;const s=sevOf(c.severity),dr=dueResp(c),da=dueAct(c);
+  b.innerHTML=`首次回應：<b>${fmtDue(dr)}</b> ${stateTag(respState(c),dr)}<br>對策提出：<b>${da?fD(toLocal(da)):'—'}</b> ${stateTag(actState(c),da)} <span class="hint">（${s.code} 級：回應 ${s.respVal}${s.respUnit==='h'?' 小時':' 個工作天'}／對策 ${s.actDays} 個工作天）</span>`}
+function updLinks(){const b=$('#linkBox');if(!b)return;const ls=String(ST.draft.attach||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  b.innerHTML=ls.map(l=>/^(https?:|file:|\\\\)/i.test(l)?`<a href="${esc(l.startsWith('\\\\')?'file:'+l.replace(/\\/g,'/'):l)}" target="_blank" rel="noopener">🔗 ${esc(l)}</a>`:`<span class="hint">📎 ${esc(l)}</span><br>`).join('')}
+function drawTL(){const b=$('#tlBox');const arr=[...ST.draft.timeline].sort((a,b)=>String(b.at).localeCompare(a.at));
+  b.innerHTML=arr.length?arr.map(t=>`<div class="it ${t.auto?'auto':''}"><div class="meta">${esc(fDT(t.at))}　${esc(t.type||'')}　${esc(t.by||'')} ${t.auto?'':`<button class="btn sm danger noprint" data-tldel="${t.id}" style="margin-left:6px">刪除</button>`}</div><div class="txt">${esc(t.text)}</div></div>`).join(''):'<div class="hint">尚無歷程紀錄</div>'}
+function validate(c){const miss=[];if(!c.receivedAt)miss.push('受理時間');if(!String(c.customer).trim())miss.push('客戶');if(!String(c.desc).trim())miss.push('問題描述');if(!c.source)miss.push('來源管道');if(!c.severity)miss.push('急迫度');if(miss.length){alert('請先填寫：'+miss.join('、'));return false}return true}
+function saveCase(silent){
+  const c=ST.draft;if(!need(ST.isNew?'case.new':'case.edit'))return false;if(!validate(c))return false;
+  if(c.status==='closed'&&!c.closedAt)c.closedAt=nowL();
+  const ts=new Date().toISOString();
+  if(ST.isNew||!c.no){c.no=genNo(c);c.createdAt=ts}
+  c.updatedAt=ts;c.updatedBy=(DH&&fileOK?askMe():ME())||c.updatedBy||'';
+  const i=DB.cases.findIndex(x=>x.id===c.id);
+  if(i>=0){const keep=new Set((c.atts||[]).map(a=>a.dir+'/'+a.f));removeAttFiles((DB.cases[i].atts||[]).filter(a=>!keep.has(a.dir+'/'+a.f)))}
+  if(i>=0)DB.cases[i]=structuredClone(c);else DB.cases.push(structuredClone(c));
+  persist();ST.isNew=false;ST.dirty=false;if(!silent)toast('已儲存 '+c.no);render();return true
+}
+function changeStatus(to){
+  const c=ST.draft,from=c.status;if(!need((to==='closed'||to==='cancel'||from==='closed'||from==='cancel')?'case.close':'case.edit'))return;
+  if(to==='wip'&&from==='new'&&!c.firstRespAt){if(confirm('首次回應時間尚未填寫，是否以現在時間填入？'))c.firstRespAt=nowL()}
+  if(to==='closed'){
+    if(!String(c.result).trim()&&!String(c.rootCause).trim()){alert('結案前請至少填寫「處置結果」或「根本原因」');return}
+    if(!c.costType&&!confirm('費用歸屬尚未選擇，仍要結案？'))return;
+    if(!c.closedAt)c.closedAt=nowL();
+  }
+  if(to==='cancel'){const why=prompt('取消原因？');if(why===null)return;c.timeline.push({id:uid(),at:nowL(),by:'',type:'其他',text:'取消原因：'+why})}
+  if(to==='wip'&&(from==='closed'||from==='cancel')){if(!confirm('重新開啟此案件？'))return;c.closedAt=''}
+  c.status=to;c.timeline.push({id:uid(),at:nowL(),by:'',type:'狀態',text:`狀態變更：${stOf(from).zh} → ${stOf(to).zh}`,auto:true});
+  ST.dirty=true;saveCase(true);toast(`${c.no}：${stOf(to).zh}`)
+}
+
+/* ---------- 統計月報 ---------- */
+const L={zh:{title:'客戶問題點月報',newC:'本月新增',closedC:'本月結案',openEnd:'月底未結案',respRate:'首次回應達成率',actRate:'對策時效達成率',avgResp:'平均首次回應',avgClose:'平均結案天數',hrs:'小時',days:'天',judged:'判定',byCat:'問題分類 Pareto（本月新增）',byCust:'依客戶（本月新增）',byFam:'依機種家族（本月新增）',bySrc:'依來源管道（本月新增）',bySev:'依急迫度（本月新增）',trend:'近 6 個月趨勢',newS:'新增',closedS:'結案',cum:'累計 %',openList:'月底未結案清單',closedList:'本月結案清單',no:'案號',recv:'受理',sev:'急迫',st:'狀態',cust:'客戶',model:'機種／型號',desc:'問題',owner:'負責人',days2:'天數',cause:'根本原因',cnt:'件',none:'無',mon:'月',print:'列印／存 PDF'},
+         en:{title:'Customer Issue Monthly Report',newC:'New',closedC:'Closed',openEnd:'Open at month end',respRate:'First-response on-time',actRate:'Countermeasure on-time',avgResp:'Avg. first response',avgClose:'Avg. days to close',hrs:'h',days:'d',judged:'judged',byCat:'Issue category Pareto (new)',byCust:'By customer (new)',byFam:'By product family (new)',bySrc:'By channel (new)',bySev:'By severity (new)',trend:'6-month trend',newS:'New',closedS:'Closed',cum:'Cum. %',openList:'Open cases at month end',closedList:'Cases closed this month',no:'No.',recv:'Received',sev:'Sev.',st:'Status',cust:'Customer',model:'Family / Model',desc:'Issue',owner:'Owner',days2:'Days',cause:'Root cause',cnt:'',none:'None',mon:'',print:'Print / PDF'}};
+const T=k=>L[ST.lang][k]??k;
+function trM(list,zh){if(ST.lang!=='en')return zh;const x=DB.master[list].find(i=>i.zh===zh);return x&&x.en?x.en:zh}
+function rRpt(el){
+  const s=stats(ST.rm),ms=monthsBack(ST.rm,6),st6=ms.map(stats),en=ST.lang==='en';
+  const sevName=code=>{const x=sevOf(code);return`${code} ${en?x.en:x.zh}`};
+  const stN=k=>en?stOf(k).en:stOf(k).zh;
+  const tbl=(arr,closedMode)=>arr.length?`<table class="tbl"><thead><tr><th>${T('no')}</th><th>${T('recv')}</th><th>${T('sev')}</th><th>${T('st')}</th><th>${T('cust')}</th><th>${T('model')}</th><th>${T('desc')}</th>${closedMode?`<th>${T('cause')}</th>`:`<th>${T('owner')}</th>`}<th>${T('days2')}</th></tr></thead><tbody>${arr.map(c=>`<tr class="click" data-id="${c.id}"><td>${esc(c.no)}</td><td>${fD(c.receivedAt)}</td><td>${sevB(c.severity)}</td><td>${stN(c.status)}</td><td>${esc(c.customer)}</td><td>${esc(c.family)} ${esc(c.model)}</td><td>${esc(trunc(c.desc,40))}</td><td>${esc(closedMode?trunc(c.rootCause,30):c.owner)}</td><td>${r1(closedMode?(P(c.closedAt)-P(c.receivedAt))/864e5:ageDays(c))}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${T('none')}</div>`;
+  el.innerHTML=`
+  <div class="card noprint" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><span style="white-space:nowrap">月份</span><input type="month" id="rm" value="${ST.rm}"></label>
+    <div class="seg"><button data-lg="zh" class="${en?'':'on'}">中文</button><button data-lg="en" class="${en?'on':''}">English</button></div>
+    <span style="flex:1"></span><button class="btn pri" id="rp">🖨 ${T('print')}</button>
+  </div>
+  <div class="rpthead"><h2>${T('title')}</h2><span class="hint">${ST.rm}　｜　Demo Tech</span></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">${T('newC')}</div><div class="v">${s.recv.length}</div></div>
+    <div class="kpi grn"><div class="l">${T('closedC')}</div><div class="v">${s.closed.length}</div></div>
+    <div class="kpi ${s.openEnd.length?'amb':''}"><div class="l">${T('openEnd')}</div><div class="v">${s.openEnd.length}</div></div>
+    <div class="kpi"><div class="l">${T('respRate')}</div><div class="v">${s.respRate==null?'—':Math.round(s.respRate)+'%'}</div><div class="s">${T('judged')} ${s.judged}</div></div>
+    <div class="kpi"><div class="l">${T('actRate')}</div><div class="v">${s.actRate==null?'—':Math.round(s.actRate)+'%'}</div><div class="s">${T('judged')} ${s.aj}</div></div>
+    <div class="kpi"><div class="l">${T('avgResp')}</div><div class="v">${s.avgResp==null?'—':r1(s.avgResp)}</div><div class="s">${T('hrs')}</div></div>
+    <div class="kpi"><div class="l">${T('avgClose')}</div><div class="v">${s.avgClose==null?'—':r1(s.avgClose)}</div><div class="s">${T('days')}</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><h3>${T('byCat')}</h3>${pareto(countBy(s.recv,c=>trM('categories',c.category)),T('cum'))}</div>
+    <div class="card"><h3>${T('trend')}</h3>${trend(ms.map(x=>en?x.slice(2):x.slice(5)+'月'),st6.map(x=>x.recv.length),st6.map(x=>x.closed.length),T('newS'),T('closedS'))}</div>
+    <div class="card"><h3>${T('byCust')}</h3>${hbars(countBy(s.recv,c=>c.customer))}</div>
+    <div class="card"><h3>${T('byFam')}</h3>${hbars(countBy(s.recv,c=>c.family),'#2b3d52')}</div>
+    <div class="card"><h3>${T('bySrc')}</h3>${hbars(countBy(s.recv,c=>trM('sources',c.source)),'#5b7a99')}</div>
+    <div class="card"><h3>${T('bySev')}</h3>${hbars(countBy(s.recv,c=>sevName(c.severity)),'#e08a12')}</div>
+  </div>
+  <div class="card"><h3>${T('openList')}（${s.openEnd.length}）</h3>${tbl(s.openEnd,false)}</div>
+  <div class="card"><h3>${T('closedList')}（${s.closed.length}）</h3>${tbl(s.closed,true)}</div>`;
+  $('#rm').onchange=e=>{if(e.target.value){ST.rm=e.target.value;rRpt(el)}};
+  el.querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{ST.lang=b.dataset.lg;rRpt(el)});
+  $('#rp').onclick=()=>window.print();
+  el.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>openCase(tr.dataset.id));
+}
+
+/* ---------- 設定 ---------- */
+function rSet(el){
+  const m=DB.master,pair=a=>a.map(x=>x.en?`${x.zh} | ${x.en}`:x.zh).join('\n');
+  const tabs=setTabs();if(!tabs.find(t=>t[0]===ST.stab))ST.stab=tabs[0]?tabs[0][0]:'master';const tab=ST.stab;
+  const lk=k=>shOn(k)?' disabled':'';const anyLk=['people','customers','families'].some(shOn);
+  let body='';
+  if(tab==='master')body=`<div class="card"><h3>主檔</h3><div class="hint" style="margin-bottom:10px">每行一筆。雙語項目用「中文 | English」格式（英文用於月報英文版）。修改名稱不會回改既有案件。</div>
+    <div class="grid">
+      <label class="fld w2"><span>問題分類（中文 | English）</span><textarea id="mCat" rows="8">${esc(pair(m.categories))}</textarea></label>
+      <label class="fld"><span>來源管道（中文 | English）</span><textarea id="mSrc" rows="8">${esc(pair(m.sources))}</textarea></label>
+      <label class="fld"><span>費用歸屬（中文 | English）</span><textarea id="mCost" rows="8">${esc(pair(m.costTypes))}</textarea></label>
+    </div>
+    <h3 style="margin-top:6px">急迫度與時效</h3>
+    <table class="tbl" id="sevT" style="max-width:860px"><thead><tr><th>代碼</th><th>中文</th><th>English</th><th>首次回應</th><th>單位</th><th>對策提出（工作天）</th><th></th></tr></thead><tbody>${m.severities.map(sevRow).join('')}</tbody></table>
+    <div style="margin-top:8px;display:flex;gap:8px"><button class="btn sm" id="sevAdd" type="button">＋ 新增等級</button><span class="hint">工作天不含週六日；國定假日未扣除。</span></div>
+    <div style="margin-top:14px"><button class="btn pri" id="mSave">💾 儲存主檔</button></div></div>`;
+  else if(tab==='shared')body=`<div class="card"><h3>人員／客戶／機種</h3>
+    ${anyLk?'<div class="lockbox">🔒 灰色欄位由入口網站「共用設定」統一維護（中繼每 5 分鐘複製到這個資料夾的 '+SHARED_AUTO+'），這裡只能查看；要修改請到入口網站 → 共用設定。</div>':'<div class="hint" style="margin-bottom:10px">入口網站「共用設定」建好人員、客戶、機種後，這裡會自動改用共用清單（鎖住）。</div>'}
+    <div class="grid">
+      <label class="fld w2"><span>客戶（格式：客戶名稱 | 縣市1,縣市2；縣市會排在選單最前面）${shOn('customers')?'　— 共用設定，縣市取「地區」欄':''}</span><textarea id="mCust" rows="9"${lk('customers')}>${esc(custList().map(c=>c.sites?`${c.name} | ${c.sites}`:c.name).join('\n'))}</textarea></label>
+      <label class="fld"><span>人員（受理人／負責人）</span><textarea id="mPeople" rows="9"${lk('people')}>${esc(peopleList().join('\n'))}</textarea></label>
+      <label class="fld"><span>機種家族</span><textarea id="mFam" rows="9"${lk('families')}>${esc(famList().join('\n'))}</textarea>${shOn('families')?'':'<button class="btn sm" id="famImp" type="button" style="margin-top:4px">從報工 JSON 匯入機種</button>'}</label>
+    </div>
+    ${['people','customers','families'].every(shOn)?'':'<div style="margin-top:10px"><button class="btn pri" id="mSave2">💾 儲存</button></div>'}
+    <h3 style="margin-top:16px">可登入的人（共用設定）</h3><div class="hint" style="line-height:1.9">${authOn()?CQ_ROLES.filter(r=>!['admin','guest'].includes(r[0])).map(([r,n])=>{const L=shPeople().filter(p=>roleOf(p)===r);return`<b>${n}</b>：${L.length?L.map(p=>esc(p.name)+(p.pin||AU().pins[p.name]?'':'（未設 PIN）')).join('、'):'—'}`}).join('<br>'):'共用設定還沒有人員名單，目前不需登入、所有人都能編輯。'}<br>主任＝勾「主任」；工程師＝FS／Repair Shop 工程師；業務＝外勤或內勤業務。</div></div>`;
+  else if(tab==='data')body=`<div class="card"><h3>資料管理</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="dExp">匯出 JSON 備份</button><button class="btn" id="dImp">匯入 JSON（取代全部）</button>
+      <button class="btn" id="dSample">載入範例資料</button><button class="btn danger" id="dClr">清除全部案件</button>
+    </div>
+    <p class="hint" style="margin-top:10px">共享方式：按右上角「連結資料夾」，選 SharePoint 同步到本機的資料夾。系統會在裡面建立 cq_settings.json（主檔）、cases（每件案件一個檔）、photos（照片）與 files（其他附件）；多人同時修改不同案件不會互相覆蓋，同一件被別人改過會先詢問；每 30 秒自動讀取其他電腦的修改。舊版的「客戶問題點資料.json」第一次連結時會自動轉換。JSON 備份不含照片，附件請以 photos、files 資料夾為準。<br>目前：${DB.cases.length} 件案件，最後更新 ${DB.updatedAt?new Date(DB.updatedAt).toLocaleString('zh-TW',{hour12:false}):'—'}，資料版本 schema ${SCHEMA}，程式 ${VER}。</p></div>`;
+  else if(tab==='perm')body=`<div class="card"><h3>權限</h3><p class="hint">各身分能做什麼；儲存後所有電腦生效（存在 cq_settings.json）。「設定：權限」固定只有管理者能改。查看儀表板、案件清單所有人都可以。${authOn()?'':'<b>共用設定還沒有人員名單，權限尚未啟用。</b>'}</p>
+    <div style="overflow:auto"><table class="tbl ptbl"><thead><tr><th>功能</th><th>說明</th>${CQ_ROLES.map(r=>`<th>${r[1]}</th>`).join('')}</tr></thead><tbody>
+    ${PERM_DEF.map(([k,l,dsc,def])=>`<tr><td>${esc(l)}</td><td class="hint" style="white-space:normal;min-width:160px">${esc(dsc)}</td>${CQ_ROLES.map(([r],ri)=>{const v=(AU().perms[k]||{})[r]||def[ri];const fx=r==='admin'&&k.startsWith('set.');return`<td><select data-pk="${k}" data-pr="${r}"${fx?' disabled':''}>${PV.map(([pv,pl])=>`<option value="${pv}"${v===pv?' selected':''}>${pl}</option>`).join('')}</select></td>`}).join('')}</tr>`).join('')}</tbody></table></div>
+    <div style="margin-top:12px;display:flex;gap:8px"><button class="btn" id="pDef">恢復預設值</button><span style="flex:1"></span><button class="btn pri" id="pSave">💾 儲存權限</button></div></div>`;
+  el.innerHTML=`<div class="stabs">${tabs.map(([k,l])=>`<button data-stab="${k}" class="${tab===k?'on':''}">${l}${k==='shared'&&anyLk?' 🔒':''}</button>`).join('')}<span style="flex:1"></span><span class="hint" style="align-self:center">程式版本 ${VER}</span></div>${body}`;
+  el.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{ST.stab=b.dataset.stab;rSet(el)});
+  const on=(id,f)=>{const e=$('#'+id);if(e)e.onclick=f};
+  const lines=id=>$('#'+id).value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const pairs=id=>lines(id).map(l=>{const[zh,en]=l.split('|').map(s=>s.trim());return{zh,en:en||''}}).filter(x=>x.zh);
+  on('sevAdd',()=>{$('#sevT tbody').insertAdjacentHTML('beforeend',sevRow({code:'',zh:'',en:'',respVal:1,respUnit:'wd',actDays:5}))});
+  if($('#sevT'))$('#sevT').onclick=e=>{if(e.target.dataset.rm)e.target.closest('tr').remove()};
+  on('mSave',()=>{
+    const sev=[...document.querySelectorAll('#sevT tbody tr')].map(tr=>{const q=k=>tr.querySelector(`[data-k=${k}]`).value.trim();return{code:q('code').toUpperCase(),zh:q('zh'),en:q('en'),respVal:+q('respVal')||1,respUnit:q('respUnit'),actDays:+q('actDays')||1}}).filter(s=>s.code);
+    if(!sev.length){alert('至少需要一個急迫度等級');return}
+    if(new Set(sev.map(s=>s.code)).size!==sev.length){alert('急迫度代碼不可重複');return}
+    Object.assign(DB.master,{categories:pairs('mCat'),sources:pairs('mSrc'),costTypes:pairs('mCost'),severities:sev});
+    persist();toast('主檔已儲存');rSet(el)});
+  on('mSave2',()=>{const ch={};
+    if(!shOn('customers'))ch.customers=lines('mCust').map(l=>{const[name,sites]=l.split('|').map(s=>s.trim());return{name,sites:sites||''}});
+    if(!shOn('people'))ch.people=[...new Set(lines('mPeople'))];if(!shOn('families'))ch.families=[...new Set(lines('mFam'))];
+    Object.assign(DB.master,ch);persist();toast('已儲存');rSet(el)});
+  on('famImp',()=>importJSON('fam'));
+  on('dExp',()=>{if(need('export'))exportJSON()});on('dImp',()=>importJSON('replace'));
+  on('dSample',()=>{if(DB.cases.length&&!confirm('範例資料會加在現有案件之後，確定？'))return;loadSample();persist();toast('已載入範例資料');go('dash')});
+  on('dClr',()=>{if(!confirm('確定清除全部案件？（主檔保留）'))return;if(prompt('請輸入「清除」確認')!=='清除')return;DB.cases=[];persist();toast('已清除');rSet(el)});
+  on('pSave',()=>{const pm={};el.querySelectorAll('[data-pk]').forEach(x=>{(pm[x.dataset.pk]=pm[x.dataset.pk]||{})[x.dataset.pr]=x.value});AU(true)._.perms=pm;persist();toast('權限已儲存');render()});
+  on('pDef',()=>{if(!confirm('權限恢復預設值？（按「儲存權限」後生效）'))return;AU(true)._.perms={};rSet(el)});
+}
+function sevRow(s){return`<tr><td><input data-k="code" value="${esc(s.code)}" style="width:50px" class="fi"></td><td><input data-k="zh" value="${esc(s.zh)}" class="fi"></td><td><input data-k="en" value="${esc(s.en)}" class="fi"></td><td><input data-k="respVal" type="number" min="1" value="${s.respVal}" style="width:70px" class="fi"></td><td><select data-k="respUnit" class="fi"><option value="h" ${s.respUnit==='h'?'selected':''}>小時</option><option value="wd" ${s.respUnit==='wd'?'selected':''}>工作天</option></select></td><td><input data-k="actDays" type="number" min="1" value="${s.actDays}" style="width:70px" class="fi"></td><td><button class="btn sm danger" data-rm="1" type="button">移除</button></td></tr>`}
+
+/* ---------- 範例資料 ---------- */
+function loadSample(){
+  const m=DB.master;
+  const addC=(name,sites)=>{if(!m.customers.some(c=>c.name===name))m.customers.push({name,sites})};
+  addC('範例客戶甲','新竹市,新竹縣');addC('範例客戶乙','臺中市');addC('範例客戶丙','臺南市');
+  ['管理者','周助理','陳主任','工程師A','工程師B'].forEach(p=>{if(!m.people.includes(p))m.people.push(p)});
+  const b=new Date(),dt=(off,h,mi=0)=>{const d=new Date(b);d.setDate(d.getDate()-off);d.setHours(h,mi,0,0);return toLocal(d)};
+  const L=[
+    {receivedAt:dt(45,9),source:'Mail',receiver:'管理者',customer:'範例客戶甲',site:'新竹市',contact:'王大明',contactDept:'設備課',contactTitle:'課長',mobile:'0912-345-678',tel:'03-5678123',ext:'2301',email:'wang@example.com',family:'DS',model:'DS-200',serial:'SN10021',severity:'A',owner:'工程師A',desc:'機台運轉中跳機，控制器顯示馬達過載告警，產線停機。',firstRespAt:dt(45,10,30),category:'停機/無法啟動',handle:'更換/借機',measureAt:dt(44,9).slice(0,10),phenomenon:'到場量測馬達電流偏高 18%，軸承有異音。',containment:'先提供借機，當日恢復生產。',result:'回廠更換軸承後測試 72 小時正常，已裝回。',custReply:'客戶確認運轉正常。',custConfirmAt:dt(38,10).slice(0,10),status:'closed',closedAt:dt(37,16),costType:'保固',rootCause:'軸承潤滑劣化，保養週期過長。',permanent:'同型機保養週期由 12 個月調整為 6 個月。'},
+    {receivedAt:dt(30,14),source:'電話',receiver:'管理者',customer:'範例客戶乙',site:'臺中市',family:'PM',model:'RB-500',serial:'SN20877',severity:'B',owner:'工程師B',desc:'抽速不足，製程腔體抽到底壓時間變長約 2 分鐘。',firstRespAt:dt(29,9),category:'抽速不足/真空度異常',handle:'派工到場',measureAt:dt(27,9).slice(0,10),phenomenon:'前級管路有洩漏。',containment:'更換管路墊片。',result:'洩漏排除，抽氣時間恢復。',status:'closed',closedAt:dt(24,17),costType:'合約內',rootCause:'墊片老化。',permanent:'加入年度保養檢查項目。'},
+    {receivedAt:dt(6,11),source:'業務轉達',receiver:'周助理',customer:'範例客戶丙',site:'臺南市',family:'SV',model:'TM-700',serial:'SN30112',severity:'B',owner:'工程師A',desc:'客戶反映維修後一週又出現異音。',firstRespAt:dt(5,15),category:'維修品質',handle:'回廠維修',phenomenon:'客戶提供錄音，高頻異音。',containment:'安排回廠檢測。',status:'wip'},
+    {receivedAt:dt(2,8,40),source:'電話',receiver:'管理者',customer:'範例客戶甲',site:'新竹縣',family:'DS',model:'DS-300',serial:'SN10388',severity:'A',owner:'工程師B',desc:'冷卻水溫度告警，機台自動降載。',category:'過熱',status:'new'},
+    {receivedAt:dt(1,16),source:'Mail',receiver:'周助理',customer:'範例客戶乙',site:'臺中市',family:'VR',model:'RV-40',severity:'C',owner:'管理者',desc:'報價單金額與合約價不一致，請確認。',firstRespAt:dt(0,9),category:'報價/帳務',handle:'遠端/電話處理',result:'已重新開立報價單寄出。',status:'confirm'}
+  ];
+  L.sort((a,c)=>a.receivedAt.localeCompare(c.receivedAt)).forEach(o=>{const c=Object.assign(blankCase(),o);c.no=genNo(c);c.createdAt=c.updatedAt=new Date().toISOString();c.atts=[];c.timeline.push({id:uid(),at:c.receivedAt,by:c.receiver,type:c.source==='電話'?'電話':'Mail',text:'受理客戶反映（範例）'});DB.cases.push(c)});
+}
+
+/* ---------- 啟動 ---------- */
+(async function init(){
+  render();updFile();
+  if(FSA){const h=await idbGet('dh');if(h){DH=h;if(await ensurePerm(false))await loadFromFile(false);updFile()}}
+})();
+</script>
+<div style="position:fixed;right:10px;bottom:10px;z-index:99999;background:rgba(198,40,40,.92);color:#fff;font:600 12px/1 sans-serif;padding:6px 10px;border-radius:6px;pointer-events:none">DEMO・資料皆為虛構</div><script>/*DEMO-SEED-TAIL*/window.addEventListener('load',function(){setTimeout(function(){try{if(!DB.cases||!DB.cases.length)(()=>{
+ let seed=11;const R=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};const pick=a=>a[Math.floor(R()*a.length)];
+ DB.cases=[];const m=DB.master;
+ m.customers=[['東嶺精密','新竹市,新竹縣'],['青禾電子','臺中市'],['瑞峰材料','臺南市'],['星澄光電','苗栗縣'],['澄山醫院','臺北市'],['永曜化工','高雄市'],['立川半導體','新竹縣']].map(([name,sites])=>({name,sites}));
+ m.people=['管理者','周助理','陳主任','王建宏','林志偉','張家豪'];
+ const fam=['VR','DS','CL','RB','LR'],cats=m.categories.map(c=>c.zh),srcs=['Mail','電話','業務轉達','LINE','現場反映'],hd=['派工到場','回廠維修','遠端/電話處理','更換/借機'];
+ const descs={'異音/振動':'運轉時出現週期性異音，振動值偏高。','過熱':'泵體溫度告警，機台自動降載。','抽速不足/真空度異常':'抽到底壓時間變長約 2 分鐘。','漏油/漏水':'油窗下方有滲油痕跡。','電氣/控制異常':'控制器間歇顯示通訊錯誤。','停機/無法啟動':'停機後無法重新啟動，馬達過載跳脫。','維修品質':'維修回裝一週後再次出現異音。','交期延誤':'維修品交期較原承諾延後。'};
+ const base=new Date('2026-11-19T17:00:00');const L=(off,h)=>{const d=new Date(base);d.setDate(d.getDate()-off);d.setHours(h,Math.floor(R()*6)*10,0,0);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
+ const offs=[];for(let i=0;i<38;i++)offs.push(Math.floor(R()*170));offs.sort((a,b)=>b-a);
+ offs.forEach((off,i)=>{const cu=pick(m.customers),cat=pick(cats.slice(0,8)),f=pick(fam),sev=R()<.2?'A':R()<.7?'B':'C';
+  const o={receivedAt:L(off,8+Math.floor(R()*9)),source:pick(srcs),receiver:pick(['管理者','周助理']),customer:cu.name,site:cu.sites.split(',')[0],family:f,model:f+'0'+pick(['100','160','250','400']),serial:'SN'+(10000+Math.floor(R()*89999)),severity:sev,owner:pick(['王建宏','林志偉','張家豪','陳主任']),desc:descs[cat]||'客戶反映設備異常，需確認。',category:cat};
+  const age=off;let st='closed';if(age<3)st='new';else if(age<12)st=pick(['wip','wip','confirm','closed']);else if(age<30)st=pick(['closed','closed','closed','wip']);
+  if(st!=='new'){o.firstRespAt=L(Math.max(0,off-(R()<.8?0:1)),Math.min(17,9+Math.floor(R()*8)));o.handle=pick(hd);o.phenomenon='現場確認：'+o.desc;o.containment='已安排'+o.handle+'。'}
+  if(st==='closed'){const dd=Math.max(0,off-(2+Math.floor(R()*10)));o.closedAt=L(dd,16);o.result='問題排除，客戶確認正常運轉。';o.rootCause=pick(['軸封老化','墊片老化','冷卻水流量不足','控制線路接觸不良','油品劣化']);o.permanent='加入保養檢查項目。';o.costType=pick(['合約內','收費','保固'])}
+  o.status=st;const c=Object.assign(blankCase(),o);c.no=genNo(c);c.createdAt=c.updatedAt=new Date().toISOString();c.atts=[];c.timeline.push({id:uid(),at:c.receivedAt,by:c.receiver,type:c.source==='電話'?'電話':'Mail',text:'受理客戶反映'});DB.cases.push(c)});
+ persist();try{localStorage.setItem('CQ_ME','管理者')}catch(e){}render();return DB.cases.length})()}catch(e){console.warn('demo seed',e)}},300)});</script>
+</body>
+</html>
